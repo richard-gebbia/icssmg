@@ -12,107 +12,18 @@ type alias Player =
     , blue : Int
     , purple : Int
     , white : Int
-    , effects : Array CycleStartEffect
-    , mode : Mode
     }
 
 
-type CycleStartEffect
-    = GetPoint { stat : Stat, duration : Duration }
-    | GetWildPoint { duration : Duration }
-    | LevelUp
-
-
-type Mode
-    = DistributingWilds { wilds : Int }
-    | SpendingPoints
-
-
 cycleStartState : Player -> Player
-cycleStartState prevPlayer =
-    let
-        initPlayer : Player
-        initPlayer =
-            { prevPlayer
-            | pink = 0
-            , yellow = 0
-            , green = 0
-            , blue = 0
-            , purple = 0
-            , white = 0
-            }
-
-        wilds : Int
-        wilds =
-            Array.foldl
-                (\effect numWilds ->
-                    when effect is
-                        GetWildPoint _ ->
-                            numWilds + 1
-
-                        LevelUp ->
-                            numWilds + 1
-
-                        _ ->
-                            numWilds
-                )
-                prevPlayer.level
-                prevPlayer.effects
-
-        newEffects : Array CycleStartEffect
-        newEffects =
-            Array.mapAndKeepJust
-                (\effect ->
-                    when effect is
-                        GetPoint { stat, duration } ->
-                            when duration is
-                                Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 1 then
-                                        Nothing
-
-                                    else
-                                        Just (GetPoint { stat = stat, duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } })
-
-                                Duration.Permanent ->
-                                    Just effect
-
-                        GetWildPoint { duration } ->
-                            when duration is
-                                Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 1 then
-                                        Nothing
-
-                                    else
-                                        Just (GetWildPoint { duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } })
-
-                                Duration.Permanent ->
-                                    Just effect
-
-                        LevelUp ->
-                            Nothing
-                )
-                prevPlayer.effects
-
-        playerWithNewPointsAndLevel : Player
-        playerWithNewPointsAndLevel =
-            Array.foldl
-                (\effect playerIter ->
-                    when effect is
-                        LevelUp ->
-                            { playerIter | level = playerIter.level + 1 }
-
-                        GetPoint { stat } ->
-                            withPointsChanged stat (\points -> points + 1) playerIter
-
-                        _ ->
-                            playerIter
-                )
-                prevPlayer
-                prevPlayer.effects
-    in
-    { playerWithNewPointsAndLevel
-    | effects = newEffects
-    , mode = DistributingWilds { wilds = wilds }
+cycleStartState player =
+    { player
+    | pink = 0
+    , yellow = 0
+    , green = 0
+    , blue = 0
+    , purple = 0
+    , white = 0
     }
 
 

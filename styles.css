@@ -41,6 +41,7 @@ body {
     background-color: var(--purple-6);
     color: var(--white);
     font-size: 16pt;
+    font-family: monospace;
 }
 
 main {
@@ -48,6 +49,26 @@ main {
     justify-content: center;
     align-items: center;
     padding: 2rem;
+}
+
+button {
+    border: 2px var(--white) solid;
+    border-radius: 6px;
+    background-color: var(--purple-2);
+    padding: 0.25rem 1rem;
+    color: var(--white);
+    font-size: 16pt;
+    font-family: monospace;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--white);
+    color: var(--purple-6);
+}
+
+button:disabled {
+    opacity: 50%;
 }
 
 .game {
@@ -74,10 +95,10 @@ main {
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-    border: 1px var(--white) solid;
+    border: 2px var(--white) solid;
     padding: 0.5rem;
     flex-grow: 1;
-    background-color: var(--blue-6);
+    background-color: var(--purple-6);
     border-radius: 4px;
 }
 
@@ -100,9 +121,86 @@ main {
 
 .quest-title {
     font-weight: 700;
+    font-size: 20pt;
 }
 
 .requirements-list {
     display: flex;
     gap: 1rem;
+}
+
+.pips {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 2px;
+}
+
+.pip-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.pip-row-header {
+    background-color: var(--purple-6);
+    border: 2px var(--white) solid;
+    border-radius: 4px;
+    padding: 0.25rem;
+}
+
+.pip-row-pips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.point-pip {
+    width: 60px;
+    height: 24px;
+    border-left: 2px var(--white) solid;
+    border-top: 2px var(--white) solid;
+    border-bottom: 2px var(--white) solid;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2px;
+    opacity: 50%;
+}
+
+.fulfilled {
+    opacity: 100%;
+}
+
+.point-pip:last-child {
+    border-right: 2px var(--white) solid;
+}
+
+.pip-pink {
+    background-color: var(--pink);
+    content: url("img/black-diamond.svg")
+}
+
+.pip-yellow {
+    background-color: var(--yellow-1);
+    content: url("img/black-star.svg")
+}
+
+.pip-green {
+    background-color: var(--green-1);
+    content: url("img/black-triangle.svg");
+}
+
+.pip-blue {
+    background-color: var(--blue-3);
+    content: url("img/black-square.svg");
+}
+
+.pip-purple {
+    background-color: var(--purple-3);
+    content: url("img/black-parallelogram.svg");
+}
+
+.pip-white {
+    background-color: var(--white);
+    content: url("img/black-circle.svg");
 }

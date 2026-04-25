@@ -6,6 +6,7 @@ import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
 import Player exposing (Player)
 import Quest exposing (Quest)
+import Quest.Requirement as QuestReq
 import Stat exposing (Stat)
 
 
@@ -62,8 +63,8 @@ viewQuest { title, requirements, duration } =
     Html.div [ HtmlAttrs.class "quest-container" ]
         [ Html.div [ HtmlAttrs.class "quest-title" ]
             [ Html.text title ]
-        , Html.div [ HtmlAttrs.class "requirements-list" ]
-            (Array.map (\{ stat, amount } -> viewPointsForStat amount stat) requirements)
+        , Html.div [ HtmlAttrs.class "pips" ]
+            (Array.map pipRow requirements)
         , Html.div []
             [ Html.text
                 (when duration is
@@ -79,3 +80,72 @@ viewQuest { title, requirements, duration } =
                 )
             ]
         ]
+
+
+pipRow : QuestReq.Requirement -> Html msg
+pipRow requirement =
+    Html.div [ HtmlAttrs.class "pip-row" ]
+        [ Html.div [ HtmlAttrs.class "pip-row-header" ]
+            [ Html.text
+                (String.fromInt (QuestReq.pointsTowardCompletion requirement)
+                    ++ "/"
+                    ++ String.fromInt (QuestReq.total requirement)
+                )
+            ]
+        , Html.button [ HtmlAttrs.type_ "button" ] [ Html.text "+1" ]
+        , Html.button [ HtmlAttrs.type_ "button" ] [ Html.text "+Max" ]
+        , Html.button
+            [ HtmlAttrs.type_ "button"
+            , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
+            ]
+            [ Html.text "-1" ]
+        , Html.button
+            [ HtmlAttrs.type_ "button"
+            , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
+            ]
+            [ Html.text "-All" ]
+        , Html.div [ HtmlAttrs.class "pip-row-pips" ]
+            (Array.map
+                (\i ->
+                    pointPip
+                        (i < QuestReq.pointsTowardCompletion requirement)
+                        (QuestReq.stat requirement)
+                )
+                (Array.range 0 (QuestReq.total requirement - 1))
+            )
+        ]
+
+
+pointPip : Bool -> Stat -> Html msg
+pointPip isFulfilled stat =
+    let
+        classForStat : String
+        classForStat =
+            when stat is
+                Stat.Pink ->
+                    "pip-pink"
+
+                Stat.Yellow ->
+                    "pip-yellow"
+
+                Stat.Green ->
+                    "pip-green"
+
+                Stat.Blue ->
+                    "pip-blue"
+
+                Stat.Purple ->
+                    "pip-purple"
+
+                Stat.White ->
+                    "pip-white"
+
+        classForFulfilled : String
+        classForFulfilled =
+            if isFulfilled then
+                " fulfilled"
+
+            else
+                ""
+    in
+    Html.div [ HtmlAttrs.class ("point-pip " ++ classForStat ++ classForFulfilled) ] []

@@ -1,15 +1,29 @@
 module GameModel exposing (..)
 
-import Duration
+import Duration exposing (Duration)
 import Player exposing (Player)
 import Quest exposing (Quest)
+import Quest.Requirement as QuestReq
 import Stat exposing (Stat)
 
 
 type alias GameModel =
     { player : Player
     , quests : Array Quest
+    , phase : Phase
+    , effects : Array CycleStartEffect
     }
+
+
+type CycleStartEffect
+    = PlayerGetsPoints { stat : Stat, amount : Int, duration : Duration }
+    | PlayerGetsWildPoints { amount : Int, duration : Duration }
+    | PlayerLevelsUp
+
+
+type Phase
+    = DistributingWilds { wilds : Int }
+    | SpendingPoints
 
 
 init : GameModel
@@ -22,28 +36,100 @@ init =
         , blue = 1
         , purple = 0
         , white = 0
-        , effects = []
-        , mode = Player.SpendingPoints
         }
     , quests =
         [ { title = "First Quest"
-          , requirements = [ { stat = Stat.Blue, amount = 1 } ]
+          , requirements = [ QuestReq.init Stat.Blue 1 ]
           , duration = Duration.Permanent
           }
         , { title = "Second Quest"
-          , requirements = [ { stat = Stat.Yellow, amount = 3 }, { stat = Stat.Purple, amount = 1 } ]
+          , requirements =
+                [ QuestReq.init Stat.Green 3 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
+                , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.cycleStartState
+                , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
+                ]
           , duration = Duration.Temp { cyclesLeft = 3 }
           }
         ]
+    , effects = []
+    , phase = SpendingPoints
     }
 
 
 cycleStartState : GameModel -> GameModel
-cycleStartState { player, quests } =
+cycleStartState { player, quests, effects } =
     let
-        newPlayer : Player
-        newPlayer =
+        playerAtCycleStart : Player
+        playerAtCycleStart =
             Player.cycleStartState player
+
+        wilds : Int
+        wilds =
+            Array.foldl
+                (\effect numWilds ->
+                    when effect is
+                        PlayerGetsWildPoints { amount } ->
+                            numWilds + amount
+
+                        PlayerLevelsUp ->
+                            numWilds + 1
+
+                        _ ->
+                            numWilds
+                )
+                playerAtCycleStart.level
+                effects
+
+        newEffects : Array CycleStartEffect
+        newEffects =
+            Array.mapAndKeepJust
+                (\effect ->
+                    when effect is
+                        PlayerGetsPoints effect_ ->
+                            when effect_.duration is
+                                Duration.Temp { cyclesLeft } ->
+                                    if cyclesLeft <= 1 then
+                                        Nothing
+
+                                    else
+                                        Just (PlayerGetsPoints { effect_ | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } })
+
+                                Duration.Permanent ->
+                                    Just effect
+
+                        PlayerGetsWildPoints effect_ ->
+                            when effect_.duration is
+                                Duration.Temp { cyclesLeft } ->
+                                    if cyclesLeft <= 1 then
+                                        Nothing
+
+                                    else
+                                        Just (PlayerGetsWildPoints { effect_ | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } })
+
+                                Duration.Permanent ->
+                                    Just effect
+
+                        PlayerLevelsUp ->
+                            Nothing
+                )
+                effects
+
+        playerWithNewPointsAndLevel : Player
+        playerWithNewPointsAndLevel =
+            Array.foldl
+                (\effect playerIter ->
+                    when effect is
+                        PlayerLevelsUp ->
+                            { playerIter | level = playerIter.level + 1 }
+
+                        PlayerGetsPoints { stat, amount } ->
+                            Player.withPointsChanged stat (\points -> points + amount) playerIter
+
+                        _ ->
+                            playerIter
+                )
+                playerAtCycleStart
+                effects
 
         newQuests : Array Quest
         newQuests =
@@ -62,24 +148,26 @@ cycleStartState { player, quests } =
                 )
                 quests
     in
-    { player = newPlayer
+    { player = playerWithNewPointsAndLevel
     , quests = newQuests
+    , phase = DistributingWilds { wilds = wilds }
+    , effects = newEffects
     }
 
 
 doesPlayerMeetQuestRequirements : Player -> Quest -> Bool
 doesPlayerMeetQuestRequirements player quest =
     Array.all
-        (\{ stat, amount } -> amount <= Player.pointsForStat stat player)
+        (\requirement -> QuestReq.total requirement <= Player.pointsForStat (QuestReq.stat requirement) player)
         quest.requirements
 
 
 withQuestCompleted : Int -> GameModel -> GameModel
-withQuestCompleted questIdx { player, quests } =
+withQuestCompleted questIdx gameModel =
     let
         quest : Maybe Quest
         quest =
-            Array.get questIdx quests
+            Array.get questIdx gameModel.quests
 
         newPlayer : Player
         newPlayer =
@@ -87,14 +175,18 @@ withQuestCompleted questIdx { player, quests } =
                 |> Maybe.map
                     (\{ requirements } ->
                         Array.foldl
-                            (\{ stat, amount } playerIter ->
-                                Player.withPointsChanged stat (\points -> points - amount) playerIter
+                            (\requirement playerIter ->
+                                Player.withPointsChanged
+                                    (QuestReq.stat requirement)
+                                    (\points -> points - QuestReq.total requirement)
+                                    playerIter
                             )
-                            player
+                            gameModel.player
                             requirements
                     )
-                |> Maybe.withDefault player
+                |> Maybe.withDefault gameModel.player
     in
-    { player = newPlayer
-    , quests = Array.indexedKeepIf (\idx _ -> not (idx == questIdx)) quests
+    { gameModel
+    | player = newPlayer
+    , quests = Array.indexedKeepIf (\idx _ -> not (idx == questIdx)) gameModel.quests
     }

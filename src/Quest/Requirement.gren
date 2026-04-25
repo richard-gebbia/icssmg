@@ -1,0 +1,60 @@
+module Quest.Requirement exposing (Requirement, cycleStartState, init, isCompleted, pointsAddedInCurrentCycle, pointsTowardCompletion, stat, total, withPointsAdded)
+
+import Stat exposing (Stat)
+
+
+type alias Requirement =
+    { stat_ : Stat
+    , amount : Int
+    , pointsAddedPreviously : Int
+    , pointsAddedInCurrentCycle_ : Int
+    }
+
+
+init : Stat -> Int -> Requirement
+init stat_ amount =
+    { stat_ = stat_
+    , amount = amount
+    , pointsAddedPreviously = 0
+    , pointsAddedInCurrentCycle_ = 0
+    }
+
+
+pointsTowardCompletion : Requirement -> Int
+pointsTowardCompletion { pointsAddedPreviously, pointsAddedInCurrentCycle_ } =
+    pointsAddedPreviously + pointsAddedInCurrentCycle_
+
+
+isCompleted : Requirement -> Bool
+isCompleted requirement =
+    requirement.amount <= pointsTowardCompletion requirement
+
+
+stat : Requirement -> Stat
+stat =
+    .stat_
+
+
+total : Requirement -> Int
+total =
+    .amount
+
+
+withPointsAdded : Int -> Requirement -> Requirement
+withPointsAdded points requirement =
+    { requirement
+    | pointsAddedInCurrentCycle_ = requirement.pointsAddedInCurrentCycle_ + points
+    }
+
+
+pointsAddedInCurrentCycle : Requirement -> Int
+pointsAddedInCurrentCycle =
+    .pointsAddedInCurrentCycle_
+
+
+cycleStartState : Requirement -> Requirement
+cycleStartState requirement =
+    { requirement
+    | pointsAddedPreviously = requirement.pointsAddedPreviously + requirement.pointsAddedInCurrentCycle_
+    , pointsAddedInCurrentCycle_ = 0
+    }
