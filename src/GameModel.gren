@@ -32,7 +32,7 @@ init =
         { level = 0
         , pink = 0
         , yellow = 0
-        , green = 0
+        , green = 2
         , blue = 1
         , purple = 0
         , white = 0
@@ -202,6 +202,21 @@ withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat points gameModel =
 
 withPlayerRemovingPointsFromQuestReq : Int -> Int -> Stat -> Int -> GameModel -> GameModel
 withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat points gameModel =
+    { gameModel
+    | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
+    , quests = Array.update questIdx (Quest.withPointsRemovedFromRequirement points reqIdx) gameModel.quests
+    }
+
+
+withPlayerRemovingAllPiontsFromQuestReq : Int -> Int -> Stat -> GameModel -> GameModel
+withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat gameModel =
+    let
+        points : Int
+        points =
+            Array.get questIdx gameModel.quests
+                |> Maybe.map (Quest.pointsAddedInCurrentCycle reqIdx)
+                |> Maybe.withDefault 0
+    in
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
     , quests = Array.update questIdx (Quest.withPointsRemovedFromRequirement points reqIdx) gameModel.quests

@@ -126,6 +126,7 @@ pipRow player questIdx reqIdx requirement =
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
+            , HtmlEvents.onClick (Msg.PlayerRemovesAllPointsFromQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text "-All" ]
         , Html.div [ HtmlAttrs.class "pip-row-pips" ]

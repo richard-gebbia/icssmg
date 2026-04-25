@@ -50,6 +50,11 @@ update msg model =
             , command = Cmd.none
             }
 
+        Msg.PlayerRemovesAllPointsFromQuestReq { questIdx, reqIdx, stat } ->
+            { model = { gameModel = GameModel.withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat model.gameModel }
+            , command = Cmd.none
+            }
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =

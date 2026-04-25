@@ -24,3 +24,10 @@ withPointsRemovedFromRequirement points reqIdx quest =
     { quest
     | requirements = Array.update reqIdx (Requirement.withPointsRemoved points) quest.requirements
     }
+
+
+pointsAddedInCurrentCycle : Int -> Quest -> Int
+pointsAddedInCurrentCycle reqIdx quest =
+    Array.get reqIdx quest.requirements
+        |> Maybe.map Requirement.pointsAddedInCurrentCycle
+        |> Maybe.withDefault 0
