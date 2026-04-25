@@ -24,7 +24,7 @@ viewCompletingQuests { player, quests } =
                 ]
             )
         , Html.section [ HtmlAttrs.class "quests-list" ]
-            (Array.map viewQuest quests)
+            (Array.map (viewQuest player) quests)
         ]
 
 
@@ -58,13 +58,13 @@ viewPointsForStat points stat =
         ]
 
 
-viewQuest : Quest -> Html msg
-viewQuest { title, requirements, duration } =
+viewQuest : Player -> Quest -> Html msg
+viewQuest player { title, requirements, duration } =
     Html.div [ HtmlAttrs.class "quest-container" ]
         [ Html.div [ HtmlAttrs.class "quest-title" ]
             [ Html.text title ]
         , Html.div [ HtmlAttrs.class "pips" ]
-            (Array.map pipRow requirements)
+            (Array.map (pipRow player) requirements)
         , Html.div []
             [ Html.text
                 (when duration is
@@ -82,8 +82,13 @@ viewQuest { title, requirements, duration } =
         ]
 
 
-pipRow : QuestReq.Requirement -> Html msg
-pipRow requirement =
+pipRow : Player -> QuestReq.Requirement -> Html msg
+pipRow player requirement =
+    let
+        playerHasNoPoints : Bool
+        playerHasNoPoints =
+            Player.pointsForStat (QuestReq.stat requirement) player <= 0
+    in
     Html.div [ HtmlAttrs.class "pip-row" ]
         [ Html.div
             [ HtmlAttrs.class "pip-row-header"
@@ -95,8 +100,8 @@ pipRow requirement =
                     ++ String.fromInt (QuestReq.total requirement)
                 )
             ]
-        , Html.button [ HtmlAttrs.type_ "button" ] [ Html.text "+1" ]
-        , Html.button [ HtmlAttrs.type_ "button" ] [ Html.text "+Max" ]
+        , Html.button [ HtmlAttrs.type_ "button", HtmlAttrs.disabled playerHasNoPoints ] [ Html.text "+1" ]
+        , Html.button [ HtmlAttrs.type_ "button", HtmlAttrs.disabled playerHasNoPoints ] [ Html.text "+Max" ]
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
