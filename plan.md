@@ -11,4 +11,38 @@
     - [X] Now do it in Gren
 - [X] Build a simple runnable model
 - [ ] "Quest list" view
-- [ ] "Cycle start" view
+    - [X] Quest title
+    - [X] Points toward requirements
+        - [X] Pips
+        - [X] Add 1 point toward requirement
+        - [X] Add as many points as you can toward requirement
+        - [X] Remove 1 point from a requirement
+        - [X] Remove all points invested in the requirement this cycle
+    - [X] Expiration
+    - [ ] Rewards
+    - [ ] Toggle "Next cycle start" view (empty)
+- [ ] "Next cycle start" view
+    - [ ] Level
+    - [ ] Points toward stats (next cycle)
+
+All information that need to be displayed:
+- Player HP
+- Player Level
+- Stats, for each
+    - points currently held this cycle
+    - total points this cycle
+    - points player will get next cycle
+    - button to add wild to stat
+    - button to remove wild from stat
+- Wilds player will get next cycle
+- Button to confirm wild distribution or end cycle depending on the phase
+- Quests, for each
+    - title
+    - requirements, for each
+        - how many points to complete
+        - button to add one point toward
+        - button to add max possible points toward
+        - button to remove one point from
+        - button to remove all points that were put toward this cycle
+    - rewards
+    - expiration
