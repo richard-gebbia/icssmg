@@ -171,6 +171,11 @@ button:disabled {
     opacity: 100%;
 }
 
+.completed {
+    color: var(--cyan-1);
+    background-color: var(--blue-5);
+}
+
 .point-pip:last-child {
     border-right: 2px var(--white) solid;
 }

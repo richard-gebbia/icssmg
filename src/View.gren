@@ -85,7 +85,10 @@ viewQuest { title, requirements, duration } =
 pipRow : QuestReq.Requirement -> Html msg
 pipRow requirement =
     Html.div [ HtmlAttrs.class "pip-row" ]
-        [ Html.div [ HtmlAttrs.class "pip-row-header" ]
+        [ Html.div
+            [ HtmlAttrs.class "pip-row-header"
+            , HtmlAttrs.classList [ { class = "completed", enabled = QuestReq.isCompleted requirement } ]
+            ]
             [ Html.text
                 (String.fromInt (QuestReq.pointsTowardCompletion requirement)
                     ++ "/"
