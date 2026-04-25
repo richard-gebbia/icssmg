@@ -60,11 +60,13 @@ button {
     font-size: 16pt;
     font-family: monospace;
     cursor: pointer;
+    transition: transform 0.2s;
 }
 
 button:hover {
     background-color: var(--white);
     color: var(--purple-6);
+    transform: scale(1.1);
 }
 
 button:disabled {
@@ -117,6 +119,12 @@ button:disabled {
     border-radius: 6px;
     align-items: start;
     background-color: var(--purple-5);
+    transition: color 0.3s, background-color 0.3s;
+}
+
+.quest-completed {
+    color: var(--cyan-1);
+    background-color: var(--blue-5);
 }
 
 .quest-title {

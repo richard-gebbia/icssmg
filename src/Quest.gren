@@ -38,3 +38,8 @@ pointsNeededToCompleteReq reqIdx quest =
     Array.get reqIdx quest.requirements
         |> Maybe.map Requirement.pointsNeededToComplete
         |> Maybe.withDefault 0
+
+
+isCompleted : Quest -> Bool
+isCompleted quest =
+    Array.all Requirement.isCompleted quest.requirements

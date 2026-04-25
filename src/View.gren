@@ -67,15 +67,18 @@ viewPointsForStat player stat =
 
 
 viewQuest : Player -> Int -> Quest -> Html Msg
-viewQuest player questIdx { title, requirements, duration } =
-    Html.div [ HtmlAttrs.class "quest-container" ]
+viewQuest player questIdx quest =
+    Html.div
+        [ HtmlAttrs.class "quest-container"
+        , HtmlAttrs.classList [ { class = "quest-completed", enabled = Quest.isCompleted quest } ]
+        ]
         [ Html.div [ HtmlAttrs.class "quest-title" ]
-            [ Html.text title ]
+            [ Html.text quest.title ]
         , Html.div [ HtmlAttrs.class "pips" ]
-            (Array.indexedMap (pipRow player questIdx) requirements)
+            (Array.indexedMap (pipRow player questIdx) quest.requirements)
         , Html.div []
             [ Html.text
-                (when duration is
+                (when quest.duration is
                     Duration.Temp { cyclesLeft } ->
                         if cyclesLeft <= 1 then
                             "Goes away next cycle"
