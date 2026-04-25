@@ -4,6 +4,7 @@ import Browser
 import GameModel exposing (GameModel)
 import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
+import Msg exposing (Msg)
 import View
 
 
@@ -19,10 +20,6 @@ main =
 
 type alias Model =
     { gameModel : GameModel }
-
-
-type alias Msg =
-    {}
 
 
 init : {} -> { model : Model, command : Cmd Msg }
@@ -41,10 +38,12 @@ view { gameModel } =
 
 
 update : Msg -> Model -> { model : Model, command : Cmd Msg }
-update _ model =
-    { model = model
-    , command = Cmd.none
-    }
+update msg model =
+    when msg is
+        Msg.PlayerPutPointIntoQuestReq { questIdx, reqIdx, stat } ->
+            { model = { gameModel = GameModel.withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat 1 model.gameModel }
+            , command = Cmd.none
+            }
 
 
 subscriptions : Model -> Sub Msg

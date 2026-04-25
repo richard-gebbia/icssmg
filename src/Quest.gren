@@ -1,7 +1,7 @@
 module Quest exposing (..)
 
 import Duration exposing (Duration)
-import Quest.Requirement exposing (Requirement)
+import Quest.Requirement as Requirement exposing (Requirement)
 import Stat exposing (Stat)
 
 
@@ -9,4 +9,11 @@ type alias Quest =
     { title : String
     , requirements : Array Requirement
     , duration : Duration
+    }
+
+
+withPointsTowardRequirement : Int -> Int -> Quest -> Quest
+withPointsTowardRequirement points reqIdx quest =
+    { quest
+    | requirements = Array.update reqIdx (Requirement.withPointsAdded points) quest.requirements
     }

@@ -190,3 +190,11 @@ withQuestCompleted questIdx gameModel =
     | player = newPlayer
     , quests = Array.indexedKeepIf (\idx _ -> not (idx == questIdx)) gameModel.quests
     }
+
+
+withPlayerPuttingPointsIntoQuestReq : Int -> Int -> Stat -> Int -> GameModel -> GameModel
+withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat points gameModel =
+    { gameModel
+    | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
+    , quests = Array.update questIdx (Quest.withPointsTowardRequirement points reqIdx) gameModel.quests
+    }

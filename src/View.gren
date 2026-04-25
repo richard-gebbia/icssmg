@@ -4,13 +4,15 @@ import Duration
 import GameModel exposing (GameModel)
 import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
+import Html.Events as HtmlEvents
+import Msg exposing (Msg)
 import Player exposing (Player)
 import Quest exposing (Quest)
 import Quest.Requirement as QuestReq
 import Stat exposing (Stat)
 
 
-viewCompletingQuests : GameModel -> Html msg
+viewCompletingQuests : GameModel -> Html Msg
 viewCompletingQuests { player, quests } =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
         [ Html.section [ HtmlAttrs.class "points-list" ]
@@ -24,11 +26,11 @@ viewCompletingQuests { player, quests } =
                 ]
             )
         , Html.section [ HtmlAttrs.class "quests-list" ]
-            (Array.map (viewQuest player) quests)
+            (Array.indexedMap (viewQuest player) quests)
         ]
 
 
-viewPointsForStat : Int -> Stat -> Html msg
+viewPointsForStat : Int -> Stat -> Html Msg
 viewPointsForStat points stat =
     let
         imgForStat : String
@@ -58,13 +60,13 @@ viewPointsForStat points stat =
         ]
 
 
-viewQuest : Player -> Quest -> Html msg
-viewQuest player { title, requirements, duration } =
+viewQuest : Player -> Int -> Quest -> Html Msg
+viewQuest player questIdx { title, requirements, duration } =
     Html.div [ HtmlAttrs.class "quest-container" ]
         [ Html.div [ HtmlAttrs.class "quest-title" ]
             [ Html.text title ]
         , Html.div [ HtmlAttrs.class "pips" ]
-            (Array.map (pipRow player) requirements)
+            (Array.indexedMap (pipRow player questIdx) requirements)
         , Html.div []
             [ Html.text
                 (when duration is
@@ -82,12 +84,16 @@ viewQuest player { title, requirements, duration } =
         ]
 
 
-pipRow : Player -> QuestReq.Requirement -> Html msg
-pipRow player requirement =
+pipRow : Player -> Int -> Int -> QuestReq.Requirement -> Html Msg
+pipRow player questIdx reqIdx requirement =
     let
+        stat : Stat
+        stat =
+            QuestReq.stat requirement
+
         playerHasNoPoints : Bool
         playerHasNoPoints =
-            Player.pointsForStat (QuestReq.stat requirement) player <= 0
+            Player.pointsForStat stat player <= 0
     in
     Html.div [ HtmlAttrs.class "pip-row" ]
         [ Html.div
@@ -100,8 +106,17 @@ pipRow player requirement =
                     ++ String.fromInt (QuestReq.total requirement)
                 )
             ]
-        , Html.button [ HtmlAttrs.type_ "button", HtmlAttrs.disabled playerHasNoPoints ] [ Html.text "+1" ]
-        , Html.button [ HtmlAttrs.type_ "button", HtmlAttrs.disabled playerHasNoPoints ] [ Html.text "+Max" ]
+        , Html.button
+            [ HtmlAttrs.type_ "button"
+            , HtmlAttrs.disabled playerHasNoPoints
+            , HtmlEvents.onClick (Msg.PlayerPutPointIntoQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
+            ]
+            [ Html.text "+1" ]
+        , Html.button
+            [ HtmlAttrs.type_ "button"
+            , HtmlAttrs.disabled playerHasNoPoints
+            ]
+            [ Html.text "+Max" ]
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)

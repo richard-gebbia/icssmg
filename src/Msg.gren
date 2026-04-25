@@ -1,0 +1,7 @@
+module Msg exposing (..)
+
+import Stat exposing (Stat)
+
+
+type Msg
+    = PlayerPutPointIntoQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
