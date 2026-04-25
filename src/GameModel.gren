@@ -26,8 +26,13 @@ init =
         , mode = Player.SpendingPoints
         }
     , quests =
-        [ { requirements = [ { stat = Stat.Blue, amount = 1 } ]
+        [ { title = "First Quest"
+          , requirements = [ { stat = Stat.Blue, amount = 1 } ]
           , duration = Duration.Permanent
+          }
+        , { title = "Second Quest"
+          , requirements = [ { stat = Stat.Yellow, amount = 3 }, { stat = Stat.Purple, amount = 1 } ]
+          , duration = Duration.Temp { cyclesLeft = 3 }
           }
         ]
     }

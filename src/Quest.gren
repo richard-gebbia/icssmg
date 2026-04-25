@@ -5,7 +5,8 @@ import Stat exposing (Stat)
 
 
 type alias Quest =
-    { requirements : Array Requirement
+    { title : String
+    , requirements : Array Requirement
     , duration : Duration
     }
 

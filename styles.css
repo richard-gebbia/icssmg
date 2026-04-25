@@ -60,6 +60,7 @@ main {
     padding: 1rem 10rem;
     display: flex;
     flex-direction: column;
+    gap: 2rem;
 }
 
 .points-list {
@@ -78,4 +79,30 @@ main {
     flex-grow: 1;
     background-color: var(--blue-6);
     border-radius: 4px;
+}
+
+.quests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.quest-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px var(--white) solid;
+    border-radius: 6px;
+    align-items: start;
+    background-color: var(--purple-5);
+}
+
+.quest-title {
+    font-weight: 700;
+}
+
+.requirements-list {
+    display: flex;
+    gap: 1rem;
 }

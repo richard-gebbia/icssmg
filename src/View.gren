@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import Duration
 import GameModel exposing (GameModel)
 import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
@@ -12,7 +13,7 @@ viewCompletingQuests : GameModel -> Html msg
 viewCompletingQuests { player, quests } =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
         [ Html.section [ HtmlAttrs.class "points-list" ]
-            (Array.map (viewPointsForStat player)
+            (Array.map (\stat -> viewPointsForStat (Player.pointsForStat stat player) stat)
                 [ Stat.Pink
                 , Stat.Yellow
                 , Stat.Green
@@ -21,11 +22,13 @@ viewCompletingQuests { player, quests } =
                 , Stat.White
                 ]
             )
+        , Html.section [ HtmlAttrs.class "quests-list" ]
+            (Array.map viewQuest quests)
         ]
 
 
-viewPointsForStat : Player -> Stat -> Html msg
-viewPointsForStat player stat =
+viewPointsForStat : Int -> Stat -> Html msg
+viewPointsForStat points stat =
     let
         imgForStat : String
         imgForStat =
@@ -50,5 +53,29 @@ viewPointsForStat player stat =
     in
     Html.div [ HtmlAttrs.class "stat-point-container" ]
         [ Html.img [ HtmlAttrs.src imgForStat, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-        , Html.div [] [ Html.text (String.fromInt (Player.pointsForStat stat player)) ]
+        , Html.div [] [ Html.text (String.fromInt points) ]
+        ]
+
+
+viewQuest : Quest -> Html msg
+viewQuest { title, requirements, duration } =
+    Html.div [ HtmlAttrs.class "quest-container" ]
+        [ Html.div [ HtmlAttrs.class "quest-title" ]
+            [ Html.text title ]
+        , Html.div [ HtmlAttrs.class "requirements-list" ]
+            (Array.map (\{ stat, amount } -> viewPointsForStat amount stat) requirements)
+        , Html.div []
+            [ Html.text
+                (when duration is
+                    Duration.Temp { cyclesLeft } ->
+                        if cyclesLeft <= 1 then
+                            "Goes away next cycle"
+
+                        else
+                            "Goes away in " ++ String.fromInt cyclesLeft ++ " cycles"
+
+                    Duration.Permanent ->
+                        "Never goes away"
+                )
+            ]
         ]
