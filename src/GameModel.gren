@@ -44,7 +44,7 @@ init =
           }
         , { title = "Second Quest"
           , requirements =
-                [ QuestReq.init Stat.Green 3 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
+                [ QuestReq.init Stat.Green 4 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
                 , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.cycleStartState
                 , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
                 ]
@@ -194,6 +194,29 @@ withQuestCompleted questIdx gameModel =
 
 withPlayerPuttingPointsIntoQuestReq : Int -> Int -> Stat -> Int -> GameModel -> GameModel
 withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat points gameModel =
+    { gameModel
+    | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
+    , quests = Array.update questIdx (Quest.withPointsTowardRequirement points reqIdx) gameModel.quests
+    }
+
+
+withPlayerPuttingMaxPointsIntoQuestReq : Int -> Int -> Stat -> GameModel -> GameModel
+withPlayerPuttingMaxPointsIntoQuestReq questIdx reqIdx stat gameModel =
+    let
+        pointsNeeded : Int
+        pointsNeeded =
+            Array.get questIdx gameModel.quests
+                |> Maybe.map (Quest.pointsNeededToCompleteReq reqIdx)
+                |> Maybe.withDefault 0
+
+        pointsHeld : Int
+        pointsHeld =
+            Player.pointsForStat stat gameModel.player
+
+        points : Int
+        points =
+            min pointsNeeded pointsHeld
+    in
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
     , quests = Array.update questIdx (Quest.withPointsTowardRequirement points reqIdx) gameModel.quests

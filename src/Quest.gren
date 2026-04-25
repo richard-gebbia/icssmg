@@ -31,3 +31,10 @@ pointsAddedInCurrentCycle reqIdx quest =
     Array.get reqIdx quest.requirements
         |> Maybe.map Requirement.pointsAddedInCurrentCycle
         |> Maybe.withDefault 0
+
+
+pointsNeededToCompleteReq : Int -> Quest -> Int
+pointsNeededToCompleteReq reqIdx quest =
+    Array.get reqIdx quest.requirements
+        |> Maybe.map Requirement.pointsNeededToComplete
+        |> Maybe.withDefault 0

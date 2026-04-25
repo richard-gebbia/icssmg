@@ -54,6 +54,7 @@ viewPointsForStat points stat =
                 Stat.White ->
                     "img/white-circle.svg"
     in
+    -- TODO: show current points / total points for cycle
     Html.div [ HtmlAttrs.class "stat-point-container" ]
         [ Html.img [ HtmlAttrs.src imgForStat, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
         , Html.div [] [ Html.text (String.fromInt points) ]
@@ -115,6 +116,7 @@ pipRow player questIdx reqIdx requirement =
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled playerHasNoPoints
+            , HtmlEvents.onClick (Msg.PlayerPutsMaxPointsIntoQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text "+Max" ]
         , Html.button
@@ -128,7 +130,7 @@ pipRow player questIdx reqIdx requirement =
             , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
             , HtmlEvents.onClick (Msg.PlayerRemovesAllPointsFromQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
             ]
-            [ Html.text "-All" ]
+            [ Html.text ("-All (" ++ String.fromInt (QuestReq.pointsAddedInCurrentCycle requirement) ++ ")") ]
         , Html.div [ HtmlAttrs.class "pip-row-pips" ]
             (Array.map
                 (\i ->

@@ -5,5 +5,6 @@ import Stat exposing (Stat)
 
 type Msg
     = PlayerPutPointIntoQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
+    | PlayerPutsMaxPointsIntoQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
     | PlayerRemovesPointFromQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
     | PlayerRemovesAllPointsFromQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
