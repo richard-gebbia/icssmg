@@ -25,24 +25,32 @@
     - [ ] Level
     - [ ] Points toward stats (next cycle)
 
-All information that need to be displayed:
-- Player HP
-- Player Level
-- Stats, for each
-    - points currently held this cycle
-    - total points this cycle
-    - points player will get next cycle
-    - button to add wild to stat
-    - button to remove wild from stat
-- Wilds player will get next cycle
-- Button to confirm wild distribution or end cycle depending on the phase
-- Quests, for each
-    - title
-    - requirements, for each
-        - how many points to complete
-        - button to add one point toward
-        - button to add max possible points toward
-        - button to remove one point from
-        - button to remove all points that were put toward this cycle
-    - rewards
-    - expiration
+Two panes, horizontally laid out:
+- Pane 1
+    - larger
+    - scrollable
+    - info:
+        - Quests, for each
+            - title
+            - requirements, for each
+                - how many points to complete
+                - button to add one point toward
+                - button to add max possible points toward
+                - button to remove one point from
+                - button to remove all points that were put toward this cycle
+            - rewards
+            - expiration
+            - what happens on expiry
+- Pane 2
+    - smaller, fixed width, not scrollable
+    - info:
+        - Player HP
+        - Player Level
+        - Stats, for each
+            - points currently held this cycle
+            - total points this cycle
+            - points player will get next cycle
+            - button to add wild to stat
+            - button to remove wild from stat
+        - Wilds player will get next cycle
+        - Button to confirm wild distribution or end cycle depending on the phase
