@@ -36,6 +36,12 @@ init =
         , blue = 1
         , purple = 0
         , white = 0
+        , pinkTotalForCycle = 0
+        , yellowTotalForCycle = 0
+        , greenTotalForCycle = 2
+        , blueTotalForCycle = 1
+        , purpleTotalForCycle = 0
+        , whiteTotalForCycle = 0
         }
     , quests =
         [ { title = "First Quest"

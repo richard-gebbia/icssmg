@@ -12,6 +12,12 @@ type alias Player =
     , blue : Int
     , purple : Int
     , white : Int
+    , pinkTotalForCycle : Int
+    , yellowTotalForCycle : Int
+    , greenTotalForCycle : Int
+    , blueTotalForCycle : Int
+    , purpleTotalForCycle : Int
+    , whiteTotalForCycle : Int
     }
 
 
@@ -24,6 +30,12 @@ cycleStartState player =
     , blue = 0
     , purple = 0
     , white = 0
+    , pinkTotalForCycle = 0
+    , yellowTotalForCycle = 0
+    , greenTotalForCycle = 0
+    , blueTotalForCycle = 0
+    , purpleTotalForCycle = 0
+    , whiteTotalForCycle = 0
     }
 
 
@@ -49,6 +61,28 @@ pointsForStat stat { pink, yellow, green, blue, purple, white } =
             white
 
 
+totalPointsForCycleForStat : Stat -> Player -> Int
+totalPointsForCycleForStat stat player =
+    when stat is
+        Stat.Pink ->
+            player.pinkTotalForCycle
+
+        Stat.Yellow ->
+            player.yellowTotalForCycle
+
+        Stat.Green ->
+            player.greenTotalForCycle
+
+        Stat.Blue ->
+            player.blueTotalForCycle
+
+        Stat.Purple ->
+            player.purpleTotalForCycle
+
+        Stat.White ->
+            player.whiteTotalForCycle
+
+
 withPointsChanged : Stat -> (Int -> Int) -> Player -> Player
 withPointsChanged stat statChange player =
     when stat is
@@ -69,3 +103,43 @@ withPointsChanged stat statChange player =
 
         Stat.White ->
             { player | white = statChange player.white }
+
+
+withExtraPointsMidCycle : Stat -> Int -> Player -> Player
+withExtraPointsMidCycle stat amount player =
+    when stat is
+        Stat.Pink ->
+            { player
+            | pink = player.pink + amount
+            , pinkTotalForCycle = player.pinkTotalForCycle + amount
+            }
+
+        Stat.Yellow ->
+            { player
+            | yellow = player.yellow + amount
+            , yellowTotalForCycle = player.yellowTotalForCycle + amount
+            }
+
+        Stat.Green ->
+            { player
+            | green = player.green + amount
+            , greenTotalForCycle = player.greenTotalForCycle + amount
+            }
+
+        Stat.Blue ->
+            { player
+            | blue = player.blue + amount
+            , blueTotalForCycle = player.blueTotalForCycle + amount
+            }
+
+        Stat.Purple ->
+            { player
+            | purple = player.purple + amount
+            , purpleTotalForCycle = player.purpleTotalForCycle + amount
+            }
+
+        Stat.White ->
+            { player
+            | white = player.white + amount
+            , whiteTotalForCycle = player.whiteTotalForCycle + amount
+            }

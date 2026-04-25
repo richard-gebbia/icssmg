@@ -157,7 +157,7 @@ button:disabled {
 .point-pip {
     width: 60px;
     height: 24px;
-    border-left: 2px var(--white) solid;
+    border-right: 2px var(--white) solid;
     border-top: 2px var(--white) solid;
     border-bottom: 2px var(--white) solid;
     display: flex;
@@ -176,8 +176,8 @@ button:disabled {
     background-color: var(--blue-5);
 }
 
-.point-pip:last-child {
-    border-right: 2px var(--white) solid;
+.point-pip:first-child {
+    border-left: 2px var(--white) solid;
 }
 
 .pip-pink {
