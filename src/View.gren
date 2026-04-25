@@ -12,6 +12,14 @@ import Quest.Requirement as QuestReq
 import Stat exposing (Stat)
 
 
+view : GameModel -> Html Msg
+view gameModel =
+    Html.section [ HtmlAttrs.class "game" ]
+        [ viewCompletingQuests gameModel
+        , viewPlayerInfo gameModel
+        ]
+
+
 viewCompletingQuests : GameModel -> Html Msg
 viewCompletingQuests { player, quests } =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
@@ -185,3 +193,8 @@ pointPip isFulfilled stat =
                 ""
     in
     Html.div [ HtmlAttrs.class ("point-pip " ++ classForStat ++ classForFulfilled) ] []
+
+
+viewPlayerInfo : GameModel -> Html Msg
+viewPlayerInfo gameModel =
+    Html.section [ HtmlAttrs.class "player-info-panel" ] []

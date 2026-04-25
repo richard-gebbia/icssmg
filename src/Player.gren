@@ -5,7 +5,9 @@ import Stat exposing (Stat)
 
 
 type alias Player =
-    { level : Int
+    { hp : Int
+    , maxHP : Int
+    , level : Int
     , pink : Int
     , yellow : Int
     , green : Int

@@ -82,13 +82,16 @@ hr {
     width: 1600px;
     height: 900px;
     border: 4px var(--white) solid;
+    border-radius: 16px;
+    display: flex;
 }
 
 .completing-quests-frame {
-    padding: 1rem 10rem;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    flex-grow: 1;
 }
 
 .points-list {
@@ -223,4 +226,10 @@ hr {
 .pip-white {
     background-color: var(--white);
     content: url("img/black-circle.svg");
+}
+
+.player-info-panel {
+    border-left: 4px var(--white) solid;
+    width: 400px;
+    padding: 1rem;
 }

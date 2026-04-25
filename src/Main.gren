@@ -31,10 +31,7 @@ init _ =
 
 view : Model -> Html Msg
 view { gameModel } =
-    Html.main_ []
-        [ Html.div [ HtmlAttrs.class "game container" ]
-            [ View.viewCompletingQuests gameModel ]
-        ]
+    Html.main_ [] [ View.view gameModel ]
 
 
 update : Msg -> Model -> { model : Model, command : Cmd Msg }

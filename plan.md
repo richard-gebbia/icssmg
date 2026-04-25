@@ -44,8 +44,9 @@ Two panes, horizontally laid out:
 - Pane 2
     - smaller, fixed width, not scrollable
     - info:
-        - Player HP
+        - Player HP/Max HP
         - Player Level
+        - Player levels next cycle
         - Stats, for each
             - points currently held this cycle
             - total points this cycle
@@ -53,4 +54,4 @@ Two panes, horizontally laid out:
             - button to add wild to stat
             - button to remove wild from stat
         - Wilds player will get next cycle
-        - Button to confirm wild distribution or end cycle depending on the phase
+        - Button to confirm wild distribution or end cycle depending on the phase (at the bottom)

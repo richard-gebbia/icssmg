@@ -29,7 +29,9 @@ type Phase
 init : GameModel
 init =
     { player =
-        { level = 0
+        { hp = 10
+        , maxHP = 10
+        , level = 0
         , pink = 0
         , yellow = 0
         , green = 2
