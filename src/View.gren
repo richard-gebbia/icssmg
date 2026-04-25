@@ -1,0 +1,54 @@
+module View exposing (..)
+
+import GameModel exposing (GameModel)
+import Html exposing (Html)
+import Html.Attributes as HtmlAttrs
+import Player exposing (Player)
+import Quest exposing (Quest)
+import Stat exposing (Stat)
+
+
+viewCompletingQuests : GameModel -> Html msg
+viewCompletingQuests { player, quests } =
+    Html.section [ HtmlAttrs.class "completing-quests-frame" ]
+        [ Html.section [ HtmlAttrs.class "points-list" ]
+            (Array.map (viewPointsForStat player)
+                [ Stat.Pink
+                , Stat.Yellow
+                , Stat.Green
+                , Stat.Blue
+                , Stat.Purple
+                , Stat.White
+                ]
+            )
+        ]
+
+
+viewPointsForStat : Player -> Stat -> Html msg
+viewPointsForStat player stat =
+    let
+        imgForStat : String
+        imgForStat =
+            when stat is
+                Stat.Pink ->
+                    "img/pink-diamond.svg"
+
+                Stat.Yellow ->
+                    "img/yellow-star.svg"
+
+                Stat.Green ->
+                    "img/green-triangle.svg"
+
+                Stat.Blue ->
+                    "img/blue-square.svg"
+
+                Stat.Purple ->
+                    "img/purple-parallelogram.svg"
+
+                Stat.White ->
+                    "img/white-circle.svg"
+    in
+    Html.div [ HtmlAttrs.class "stat-point-container" ]
+        [ Html.img [ HtmlAttrs.src imgForStat, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+        , Html.div [] [ Html.text (String.fromInt (Player.pointsForStat stat player)) ]
+        ]

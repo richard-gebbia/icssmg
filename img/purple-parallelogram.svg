@@ -15,7 +15,7 @@
      id="layer1">
     <path
        style="fill:#855395;fill-opacity:1;stroke-width:0.264583"
-       d="M 16,0 0,64 H 48 L 64,0 Z"
+       d="M 32,0 0,64 H 32 L 64,0 Z"
        id="path1" />
   </g>
 </svg>

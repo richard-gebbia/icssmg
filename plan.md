@@ -10,5 +10,5 @@
 - [X] Render the shapes
     - [X] Now do it in Gren
 - [X] Build a simple runnable model
-- [ ] "Cycle start" view
 - [ ] "Quest list" view
+- [ ] "Cycle start" view

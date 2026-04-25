@@ -40,6 +40,7 @@
 body {
     background-color: var(--purple-6);
     color: var(--white);
+    font-size: 16pt;
 }
 
 main {
@@ -52,12 +53,29 @@ main {
 .game {
     width: 1600px;
     height: 900px;
-    border: 3px var(--white) solid;
+    border: 4px var(--white) solid;
 }
 
-.container {
+.completing-quests-frame {
+    padding: 1rem 10rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.points-list {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+}
+
+.stat-point-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.5rem;
+    border: 1px var(--white) solid;
+    padding: 0.5rem;
+    flex-grow: 1;
+    background-color: var(--blue-6);
+    border-radius: 4px;
 }

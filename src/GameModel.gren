@@ -12,6 +12,27 @@ type alias GameModel =
     }
 
 
+init : GameModel
+init =
+    { player =
+        { level = 0
+        , pink = 0
+        , yellow = 0
+        , green = 0
+        , blue = 1
+        , purple = 0
+        , white = 0
+        , effects = []
+        , mode = Player.SpendingPoints
+        }
+    , quests =
+        [ { requirements = [ { stat = Stat.Blue, amount = 1 } ]
+          , duration = Duration.Permanent
+          }
+        ]
+    }
+
+
 cycleStartState : GameModel -> GameModel
 cycleStartState { player, quests } =
     let

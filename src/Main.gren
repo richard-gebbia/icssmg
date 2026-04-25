@@ -1,8 +1,10 @@
 module Main exposing (..)
 
 import Browser
+import GameModel exposing (GameModel)
 import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
+import View
 
 
 main : Program {} Model Msg
@@ -16,7 +18,7 @@ main =
 
 
 type alias Model =
-    {}
+    { gameModel : GameModel }
 
 
 type alias Msg =
@@ -25,29 +27,22 @@ type alias Msg =
 
 init : {} -> { model : Model, command : Cmd Msg }
 init _ =
-    { model = {}
+    { model = { gameModel = GameModel.init }
     , command = Cmd.none
     }
 
 
 view : Model -> Html Msg
-view _ =
+view { gameModel } =
     Html.main_ []
         [ Html.div [ HtmlAttrs.class "game container" ]
-            [ Html.img [ HtmlAttrs.src "img/blue-square.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            , Html.img [ HtmlAttrs.src "img/green-triangle.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            , Html.img [ HtmlAttrs.src "img/pink-diamond.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            , Html.img [ HtmlAttrs.src "img/purple-parallelogram.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            , Html.img [ HtmlAttrs.src "img/white-circle.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            , Html.img [ HtmlAttrs.src "img/yellow-star.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            , Html.img [ HtmlAttrs.src "img/wild-orb.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-            ]
+            [ View.viewCompletingQuests gameModel ]
         ]
 
 
 update : Msg -> Model -> { model : Model, command : Cmd Msg }
-update _ _ =
-    { model = {}
+update _ model =
+    { model = model
     , command = Cmd.none
     }
 
