@@ -198,3 +198,11 @@ withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat points gameModel =
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
     , quests = Array.update questIdx (Quest.withPointsTowardRequirement points reqIdx) gameModel.quests
     }
+
+
+withPlayerRemovingPointsFromQuestReq : Int -> Int -> Stat -> Int -> GameModel -> GameModel
+withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat points gameModel =
+    { gameModel
+    | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
+    , quests = Array.update questIdx (Quest.withPointsRemovedFromRequirement points reqIdx) gameModel.quests
+    }

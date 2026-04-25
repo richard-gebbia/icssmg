@@ -17,3 +17,10 @@ withPointsTowardRequirement points reqIdx quest =
     { quest
     | requirements = Array.update reqIdx (Requirement.withPointsAdded points) quest.requirements
     }
+
+
+withPointsRemovedFromRequirement : Int -> Int -> Quest -> Quest
+withPointsRemovedFromRequirement points reqIdx quest =
+    { quest
+    | requirements = Array.update reqIdx (Requirement.withPointsRemoved points) quest.requirements
+    }

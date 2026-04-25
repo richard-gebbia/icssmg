@@ -45,6 +45,11 @@ update msg model =
             , command = Cmd.none
             }
 
+        Msg.PlayerRemovesPointFromQuestReq { questIdx, reqIdx, stat } ->
+            { model = { gameModel = GameModel.withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat 1 model.gameModel }
+            , command = Cmd.none
+            }
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
