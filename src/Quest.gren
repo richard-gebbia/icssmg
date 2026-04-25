@@ -1,0 +1,16 @@
+module Quest exposing (..)
+
+import Duration exposing (Duration)
+import Stat exposing (Stat)
+
+
+type alias Quest =
+    { requirements : Array Requirement
+    , duration : Duration
+    }
+
+
+type alias Requirement =
+    { stat : Stat
+    , amount : Int
+    }

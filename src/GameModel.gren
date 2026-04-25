@@ -1,0 +1,74 @@
+module GameModel exposing (..)
+
+import Duration
+import Player exposing (Player)
+import Quest exposing (Quest)
+import Stat exposing (Stat)
+
+
+type alias GameModel =
+    { player : Player
+    , quests : Array Quest
+    }
+
+
+cycleStartState : GameModel -> GameModel
+cycleStartState { player, quests } =
+    let
+        newPlayer : Player
+        newPlayer =
+            Player.cycleStartState player
+
+        newQuests : Array Quest
+        newQuests =
+            Array.mapAndKeepJust
+                (\quest ->
+                    when quest.duration is
+                        Duration.Temp { cyclesLeft } ->
+                            if cyclesLeft <= 1 then
+                                Nothing
+
+                            else
+                                Just { quest | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } }
+
+                        Duration.Permanent ->
+                            Just quest
+                )
+                quests
+    in
+    { player = newPlayer
+    , quests = newQuests
+    }
+
+
+doesPlayerMeetQuestRequirements : Player -> Quest -> Bool
+doesPlayerMeetQuestRequirements player quest =
+    Array.all
+        (\{ stat, amount } -> amount <= Player.pointsForStat stat player)
+        quest.requirements
+
+
+withQuestCompleted : Int -> GameModel -> GameModel
+withQuestCompleted questIdx { player, quests } =
+    let
+        quest : Maybe Quest
+        quest =
+            Array.get questIdx quests
+
+        newPlayer : Player
+        newPlayer =
+            quest
+                |> Maybe.map
+                    (\{ requirements } ->
+                        Array.foldl
+                            (\{ stat, amount } playerIter ->
+                                Player.withPointsChanged stat (\points -> points - amount) playerIter
+                            )
+                            player
+                            requirements
+                    )
+                |> Maybe.withDefault player
+    in
+    { player = newPlayer
+    , quests = Array.indexedKeepIf (\idx _ -> not (idx == questIdx)) quests
+    }

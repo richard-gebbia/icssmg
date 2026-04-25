@@ -1,0 +1,12 @@
+module Stat exposing (..)
+
+
+
+
+type Stat
+    = Pink
+    | Yellow
+    | Green
+    | Blue
+    | Purple
+    | White

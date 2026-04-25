@@ -1,0 +1,14 @@
+- [x] Init the repo
+- [x] Find a palette
+- [ ] Get icons for the stats
+    - [X] white circle
+    - [X] yellow star
+    - [X] blue square
+    - [X] purple parallelogram
+    - [X] pink diamond
+    - [X] green triangle
+- [X] Render the shapes
+    - [X] Now do it in Gren
+- [X] Build a simple runnable model
+- [ ] "Cycle start" view
+- [ ] "Quest list" view

@@ -1,0 +1,8 @@
+module Duration exposing (..)
+
+
+
+
+type Duration
+    = Temp { cyclesLeft : Int }
+    | Permanent

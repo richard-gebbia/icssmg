@@ -1,0 +1,57 @@
+module Main exposing (..)
+
+import Browser
+import Html exposing (Html)
+import Html.Attributes as HtmlAttrs
+
+
+main : Program {} Model Msg
+main =
+    Browser.element
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+
+type alias Model =
+    {}
+
+
+type alias Msg =
+    {}
+
+
+init : {} -> { model : Model, command : Cmd Msg }
+init _ =
+    { model = {}
+    , command = Cmd.none
+    }
+
+
+view : Model -> Html Msg
+view _ =
+    Html.main_ []
+        [ Html.div [ HtmlAttrs.class "game container" ]
+            [ Html.img [ HtmlAttrs.src "img/blue-square.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            , Html.img [ HtmlAttrs.src "img/green-triangle.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            , Html.img [ HtmlAttrs.src "img/pink-diamond.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            , Html.img [ HtmlAttrs.src "img/purple-parallelogram.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            , Html.img [ HtmlAttrs.src "img/white-circle.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            , Html.img [ HtmlAttrs.src "img/yellow-star.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            , Html.img [ HtmlAttrs.src "img/wild-orb.svg", HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+            ]
+        ]
+
+
+update : Msg -> Model -> { model : Model, command : Cmd Msg }
+update _ _ =
+    { model = {}
+    , command = Cmd.none
+    }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.none

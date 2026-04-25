@@ -1,0 +1,63 @@
+:root {
+    /* palette: chasm by dysphoriaa: https://lospec.com/palette-list/chasm */
+    --blue-1: #85daeb;
+    --blue-2: #5fc9e7;
+    --blue-3: #5fa1e7;
+    --blue-4: #5f6ee7;
+    --blue-5: #4c60aa;
+    --blue-6: #444774;
+
+    --purple-1: #ca60ae;
+    --purple-2: #ab58a8;
+    --purple-3: #855395;
+    --purple-4: #5d4776;
+    --purple-5: #463c5e;
+    --purple-6: #32313b;
+
+    --orange: #f3a787;
+
+    --yellow-1: #fdfe89;
+    --yellow-2: #f5daa7;
+
+    --green-1: #8dd894;
+    --green-2: #5dc190;
+
+    --cyan-1: #5efdf7;
+    --cyan-2: #4593a5;
+    --cyan-3: #4ab9a3;
+
+    --pink: #ff5dcc;
+
+    --white: #ffffff;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--purple-6);
+    color: var(--white);
+}
+
+main {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+}
+
+.game {
+    width: 1600px;
+    height: 900px;
+    border: 3px var(--white) solid;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.25rem;
+}
