@@ -76,6 +76,7 @@ viewQuest player questIdx quest =
             [ Html.text quest.title ]
         , Html.div [ HtmlAttrs.class "pips" ]
             (Array.indexedMap (pipRow player questIdx) quest.requirements)
+        , Html.hr [] []
         , Html.div []
             [ Html.text
                 (when quest.duration is

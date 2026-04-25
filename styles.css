@@ -73,6 +73,11 @@ button:disabled {
     opacity: 50%;
 }
 
+hr {
+    border: 1px var(--white) solid;
+    width: 100%;
+}
+
 .game {
     width: 1600px;
     height: 900px;
