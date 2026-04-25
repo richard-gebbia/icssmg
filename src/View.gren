@@ -23,54 +23,9 @@ view gameModel =
 viewCompletingQuests : GameModel -> Html Msg
 viewCompletingQuests { player, quests } =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
-        [ Html.section [ HtmlAttrs.class "points-list" ]
-            (Array.map (\stat -> viewPointsForStat player stat)
-                [ Stat.Pink
-                , Stat.Yellow
-                , Stat.Green
-                , Stat.Blue
-                , Stat.Purple
-                , Stat.White
-                ]
-            )
+        [ Html.h2 [] [ Html.text "Quests" ]
         , Html.section [ HtmlAttrs.class "quests-list" ]
             (Array.indexedMap (viewQuest player) quests)
-        ]
-
-
-viewPointsForStat : Player -> Stat -> Html Msg
-viewPointsForStat player stat =
-    let
-        imgForStat : String
-        imgForStat =
-            when stat is
-                Stat.Pink ->
-                    "img/pink-diamond.svg"
-
-                Stat.Yellow ->
-                    "img/yellow-star.svg"
-
-                Stat.Green ->
-                    "img/green-triangle.svg"
-
-                Stat.Blue ->
-                    "img/blue-square.svg"
-
-                Stat.Purple ->
-                    "img/purple-parallelogram.svg"
-
-                Stat.White ->
-                    "img/white-circle.svg"
-    in
-    Html.div [ HtmlAttrs.class "stat-point-container" ]
-        [ Html.img [ HtmlAttrs.src imgForStat, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-        , Html.div []
-            [ Html.text
-                (String.fromInt (Player.pointsForStat stat player)
-                    ++ "/"
-                    ++ String.fromInt (Player.totalPointsForCycleForStat stat player)
-                )
-            ]
         ]
 
 
@@ -197,4 +152,59 @@ pointPip isFulfilled stat =
 
 viewPlayerInfo : GameModel -> Html Msg
 viewPlayerInfo gameModel =
-    Html.section [ HtmlAttrs.class "player-info-panel" ] []
+    Html.section [ HtmlAttrs.class "player-info-panel" ]
+        [ Html.div [ HtmlAttrs.class "player-info-line" ]
+            [ Html.b [] [ Html.text "HP: " ]
+            , Html.text (String.fromInt gameModel.player.hp ++ "/" ++ String.fromInt gameModel.player.maxHP)
+            ]
+        , Html.div [ HtmlAttrs.class "player-info-line" ]
+            [ Html.b [] [ Html.text "Level: " ]
+            , Html.text (String.fromInt gameModel.player.level)
+            ]
+        , Html.section [ HtmlAttrs.class "points-list" ]
+            (Array.map (\stat -> viewPointsForStat gameModel.player stat)
+                [ Stat.Pink
+                , Stat.Yellow
+                , Stat.Green
+                , Stat.Blue
+                , Stat.Purple
+                , Stat.White
+                ]
+            )
+        ]
+
+
+viewPointsForStat : Player -> Stat -> Html Msg
+viewPointsForStat player stat =
+    let
+        imgForStat : String
+        imgForStat =
+            when stat is
+                Stat.Pink ->
+                    "img/pink-diamond.svg"
+
+                Stat.Yellow ->
+                    "img/yellow-star.svg"
+
+                Stat.Green ->
+                    "img/green-triangle.svg"
+
+                Stat.Blue ->
+                    "img/blue-square.svg"
+
+                Stat.Purple ->
+                    "img/purple-parallelogram.svg"
+
+                Stat.White ->
+                    "img/white-circle.svg"
+    in
+    Html.div [ HtmlAttrs.class "stat-point-container" ]
+        [ Html.img [ HtmlAttrs.src imgForStat, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+        , Html.div []
+            [ Html.text
+                (String.fromInt (Player.pointsForStat stat player)
+                    ++ "/"
+                    ++ String.fromInt (Player.totalPointsForCycleForStat stat player)
+                )
+            ]
+        ]

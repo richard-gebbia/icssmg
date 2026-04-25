@@ -45,8 +45,9 @@ Two panes, horizontally laid out:
     - smaller, fixed width, not scrollable
     - info:
         - Player HP/Max HP
+        - Player HP/Max HP next cycle
         - Player Level
-        - Player levels next cycle
+        - Player level next cycle
         - Stats, for each
             - points currently held this cycle
             - total points this cycle
