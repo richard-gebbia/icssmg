@@ -19,6 +19,9 @@ type CycleStartEffect
     = PlayerGetsPoints { stat : Stat, amount : Int, duration : Duration }
     | PlayerGetsWildPoints { amount : Int, duration : Duration }
     | PlayerLevelsUp
+    | PlayerHeals { amount : Int }
+    | PlayerMaxHPChanges { amount : Int }
+    | PlayerTakesDamage { amount : Int }
 
 
 type Phase
@@ -59,7 +62,13 @@ init =
           , duration = Duration.Temp { cyclesLeft = 3 }
           }
         ]
-    , effects = [ PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } } ]
+    , effects =
+        [ PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
+        , PlayerHeals { amount = 2 }
+        , PlayerMaxHPChanges { amount = -1 }
+        , PlayerLevelsUp
+        , PlayerLevelsUp
+        ]
     , phase = SpendingPoints { totalWilds = 1 }
     }
 
@@ -118,6 +127,15 @@ cycleStartState { player, quests, effects } =
                                     Just effect
 
                         PlayerLevelsUp ->
+                            Nothing
+
+                        PlayerHeals _ ->
+                            Nothing
+
+                        PlayerMaxHPChanges _ ->
+                            Nothing
+
+                        PlayerTakesDamage _ ->
                             Nothing
                 )
                 effects
@@ -326,4 +344,52 @@ wildsNextCycle gameModel =
                     count
         )
         gameModel.player.level
+        gameModel.effects
+
+
+bonusHpNextCycle : GameModel -> Int
+bonusHpNextCycle gameModel =
+    Array.foldl
+        (\effect count ->
+            when effect is
+                PlayerHeals { amount } ->
+                    count + amount
+
+                PlayerTakesDamage { amount } ->
+                    count - amount
+
+                _ ->
+                    count
+        )
+        0
+        gameModel.effects
+
+
+bonusMaxHpNextCycle : GameModel -> Int
+bonusMaxHpNextCycle gameModel =
+    Array.foldl
+        (\effect count ->
+            when effect is
+                PlayerMaxHPChanges { amount } ->
+                    count + amount
+
+                _ ->
+                    count
+        )
+        0
+        gameModel.effects
+
+
+bonusLevelsNextCycle : GameModel -> Int
+bonusLevelsNextCycle gameModel =
+    Array.foldl
+        (\effect count ->
+            when effect is
+                PlayerLevelsUp ->
+                    count + 1
+
+                _ ->
+                    count
+        )
+        0
         gameModel.effects

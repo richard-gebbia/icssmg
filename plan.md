@@ -1,6 +1,6 @@
 - [x] Init the repo
 - [x] Find a palette
-- [ ] Get icons for the stats
+- [X] Get icons for the stats
     - [X] white circle
     - [X] yellow star
     - [X] blue square
@@ -31,28 +31,28 @@ Two panes, horizontally laid out:
     - scrollable
     - info:
         - Quests, for each
-            - title
+            X title
             - requirements, for each
-                - how many points to complete
-                - button to add one point toward
-                - button to add max possible points toward
-                - button to remove one point from
-                - button to remove all points that were put toward this cycle
+                X how many points to complete
+                X button to add one point toward
+                X button to add max possible points toward
+                X button to remove one point from
+                X button to remove all points that were put toward this cycle
             - rewards
-            - expiration
-            - what happens on expiry
+            X expiration
+            - what (if anything) happens on expiry
 - Pane 2
     - smaller, fixed width, not scrollable
     - info:
-        - Player HP/Max HP
-        - Player HP/Max HP next cycle
-        - Player Level
-        - Player level next cycle
+        X Player HP/Max HP
+        X Player HP/Max HP next cycle
+        X Player Level
+        X Player level next cycle
         - Stats, for each
-            - points currently held this cycle
-            - total points this cycle
-            - points player will get next cycle
+            X points currently held this cycle
+            X total points this cycle
+            X points player will get next cycle
             - button to add wild to stat
             - button to remove wild from stat
-        - Wilds player will get next cycle
+        X Wilds player will get next cycle
         - Button to confirm wild distribution or end cycle depending on the phase (at the bottom)

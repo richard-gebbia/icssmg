@@ -257,6 +257,10 @@ hr {
     color: var(--cyan-1);
 }
 
+.penalty-next-cycle {
+    color: var(--orange);
+}
+
 .complete-button {
     padding-top: 1rem;
     padding-bottom: 1rem;

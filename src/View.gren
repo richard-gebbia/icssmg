@@ -152,15 +152,62 @@ pointPip isFulfilled stat =
 
 viewPlayerInfo : GameModel -> Html Msg
 viewPlayerInfo gameModel =
+    let
+        bonusHpNextCycle : Int
+        bonusHpNextCycle =
+            GameModel.bonusHpNextCycle gameModel
+
+        bonusMaxHpNextCycle : Int
+        bonusMaxHpNextCycle =
+            GameModel.bonusMaxHpNextCycle gameModel
+
+        bonusLevelsNextCycle : Int
+        bonusLevelsNextCycle =
+            GameModel.bonusLevelsNextCycle gameModel
+    in
     Html.section [ HtmlAttrs.class "player-info-panel" ]
         [ Html.div [ HtmlAttrs.class "player-info-panel-top-section" ]
             [ Html.div [ HtmlAttrs.class "player-info-line" ]
                 [ Html.b [] [ Html.text "HP: " ]
                 , Html.text (String.fromInt gameModel.player.hp ++ "/" ++ String.fromInt gameModel.player.maxHP)
+                , if not (bonusHpNextCycle == 0) || not (bonusMaxHpNextCycle == 0) then
+                    let
+                        nextCycleHpText : String
+                        nextCycleHpText =
+                            if bonusHpNextCycle < 0 then
+                                "(" ++ String.fromInt bonusHpNextCycle
+
+                            else
+                                "(+" ++ String.fromInt bonusHpNextCycle
+
+                        nextCycleMaxHpText : String
+                        nextCycleMaxHpText =
+                            if bonusMaxHpNextCycle < 0 then
+                                String.fromInt bonusMaxHpNextCycle ++ ")"
+
+                            else
+                                "+" ++ String.fromInt bonusMaxHpNextCycle ++ ")"
+                    in
+                    Html.span
+                        [ HtmlAttrs.classList
+                            [ { class = "penalty-next-cycle", enabled = bonusHpNextCycle < 0 || bonusMaxHpNextCycle < 0 }
+                            , { class = "bonus-next-cycle", enabled = 0 <= bonusHpNextCycle && 0 <= bonusMaxHpNextCycle }
+                            ]
+                        ]
+                        [ Html.text (" " ++ nextCycleHpText ++ "/" ++ nextCycleMaxHpText) ]
+
+                  else
+                    Html.text ""
                 ]
             , Html.div [ HtmlAttrs.class "player-info-line" ]
                 [ Html.b [] [ Html.text "Level: " ]
                 , Html.text (String.fromInt gameModel.player.level)
+                , if 0 < bonusLevelsNextCycle then
+                    Html.span [ HtmlAttrs.class "bonus-next-cycle" ]
+                        [ Html.text (" (+" ++ String.fromInt bonusLevelsNextCycle ++ ")") ]
+
+                  else
+                    Html.text ""
                 ]
             , Html.section [ HtmlAttrs.class "points-list" ]
                 (Array.map (\stat -> viewPointsForStat gameModel stat)
