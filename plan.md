@@ -12,8 +12,8 @@
 - [X] Build a simple runnable model
 - [ ] UI (see below)
 - [X] Quests give rewards
-- [ ] Commit Cycle
-- [ ] Actually have HP and max HP change effects do something
+- [X] Commit Cycle
+- [X] Actually have HP and max HP change effects do something
 - [ ] Distribute wilds phase
 - [ ] Find minimal repro for a bug with Gren formatter
 

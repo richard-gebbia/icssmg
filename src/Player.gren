@@ -145,3 +145,28 @@ withExtraPointsMidCycle stat amount player =
             | white = player.white + amount
             , whiteTotalForCycle = player.whiteTotalForCycle + amount
             }
+
+
+{-| Updates HP. This can make the player HP go above max HP for optimization purposes.
+    Call adjustedForMaxHP after all HP effects are evaluated to factor in Max HP.
+-}
+withHpChanged : Int -> Player -> Player
+withHpChanged amount player =
+    { player
+    | hp = player.hp + amount
+    }
+
+
+withMaxHpChanged : Int -> Player -> Player
+withMaxHpChanged amount player =
+    { player
+    | hp = player.hp + amount
+    , maxHP = player.maxHP + amount
+    }
+
+
+adjustedForMaxHP : Player -> Player
+adjustedForMaxHP player =
+    { player
+    | hp = min player.hp player.maxHP
+    }

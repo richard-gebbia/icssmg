@@ -163,11 +163,21 @@ nextCycleStartState { player, quests, effects } =
                         CycleStartEffect.PlayerGetsPoints { stat, amount } ->
                             Player.withPointsChanged stat (\points -> points + amount) playerIter
 
+                        CycleStartEffect.PlayerHeals { amount } ->
+                            Player.withHpChanged amount playerIter
+
+                        CycleStartEffect.PlayerMaxHPChanges { amount } ->
+                            Player.withMaxHpChanged amount playerIter
+
+                        CycleStartEffect.PlayerTakesDamage { amount } ->
+                            Player.withHpChanged -amount playerIter
+
                         _ ->
                             playerIter
                 )
                 playerAtCycleStart
                 effects
+                |> Player.adjustedForMaxHP
 
         newQuests : Dict ID Quest
         newQuests =
@@ -202,36 +212,6 @@ doesPlayerMeetQuestRequirements player quest =
     Array.all
         (\requirement -> QuestReq.total requirement <= Player.pointsForStat (QuestReq.stat requirement) player)
         quest.requirements
-
-
-withQuestCompleted : ID -> GameModel -> GameModel
-withQuestCompleted questId gameModel =
-    let
-        quest : Maybe Quest
-        quest =
-            Dict.get questId gameModel.quests
-
-        newPlayer : Player
-        newPlayer =
-            quest
-                |> Maybe.map
-                    (\{ requirements } ->
-                        Array.foldl
-                            (\requirement playerIter ->
-                                Player.withPointsChanged
-                                    (QuestReq.stat requirement)
-                                    (\points -> points - QuestReq.total requirement)
-                                    playerIter
-                            )
-                            gameModel.player
-                            requirements
-                    )
-                |> Maybe.withDefault gameModel.player
-    in
-    { gameModel
-    | player = newPlayer
-    , quests = Dict.remove questId gameModel.quests
-    }
 
 
 withPlayerPuttingPointsIntoQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
