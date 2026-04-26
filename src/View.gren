@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import CycleStartEffect exposing (CycleStartEffect)
 import Duration
 import GameModel exposing (GameModel)
 import Html exposing (Html)
@@ -39,6 +40,12 @@ viewQuest player questIdx quest =
             [ Html.text quest.title ]
         , Html.div [ HtmlAttrs.class "pips" ]
             (Array.indexedMap (pipRow player questIdx) quest.requirements)
+        , Html.hr [] []
+        , Html.div [ HtmlAttrs.class "rewards-section" ]
+            [ Html.b [] [ Html.text "On completion:" ]
+            , Html.ul []
+                (Array.map viewEffectListItem quest.completionEffects)
+            ]
         , Html.hr [] []
         , Html.div []
             [ Html.text
@@ -150,6 +157,117 @@ pointPip isFulfilled stat =
     Html.div [ HtmlAttrs.class ("point-pip " ++ classForStat ++ classForFulfilled) ] []
 
 
+viewEffectListItem : CycleStartEffect -> Html msg
+viewEffectListItem effect =
+    Html.li [] (viewCycleStartEffect effect)
+
+
+imgForStat : Stat -> String
+imgForStat stat =
+    when stat is
+        Stat.Pink ->
+            "img/pink-diamond.svg"
+
+        Stat.Yellow ->
+            "img/yellow-star.svg"
+
+        Stat.Green ->
+            "img/green-triangle.svg"
+
+        Stat.Blue ->
+            "img/blue-square.svg"
+
+        Stat.Purple ->
+            "img/purple-parallelogram.svg"
+
+        Stat.White ->
+            "img/white-circle.svg"
+
+
+viewCycleStartEffect : CycleStartEffect -> Array (Html msg)
+viewCycleStartEffect effect =
+    let
+        wildImg : Html msg
+        wildImg =
+            Html.img [ HtmlAttrs.src "img/wild-blob.svg", HtmlAttrs.width 16, HtmlAttrs.height 16 ] []
+    in
+    when effect is
+        CycleStartEffect.PlayerGetsPoints { stat, amount, duration } ->
+            let
+                getLine : Html msg
+                getLine =
+                    Html.text ("Get +" ++ String.fromInt amount)
+
+                img : Html msg
+                img =
+                    Html.img [ HtmlAttrs.src (imgForStat stat), HtmlAttrs.width 16, HtmlAttrs.height 16 ] []
+            in
+            when duration is
+                Duration.Temp { cyclesLeft } ->
+                    if cyclesLeft <= 1 then
+                        [ getLine
+                        , img
+                        , Html.text " next cycle."
+                        ]
+
+                    else
+                        [ getLine
+                        , img
+                        , Html.text (" for the next " ++ String.fromInt cyclesLeft ++ " cycles.")
+                        ]
+
+                Duration.Permanent ->
+                    [ getLine
+                    , img
+                    , Html.text " permanently."
+                    ]
+
+        CycleStartEffect.PlayerGetsWildPoints { amount, duration } ->
+            let
+                getLine : Html msg
+                getLine =
+                    Html.text ("Get +" ++ String.fromInt amount)
+            in
+            when duration is
+                Duration.Temp { cyclesLeft } ->
+                    if cyclesLeft <= 1 then
+                        [ getLine
+                        , wildImg
+                        , Html.text " next cycle."
+                        ]
+
+                    else
+                        [ getLine
+                        , wildImg
+                        , Html.text (" for the next " ++ String.fromInt cyclesLeft ++ " cycles.")
+                        ]
+
+                Duration.Permanent ->
+                    [ getLine
+                    , wildImg
+                    , Html.text " permanently."
+                    ]
+
+        CycleStartEffect.PlayerLevelsUp ->
+            [ Html.text "Level up! (Get one more "
+            , wildImg
+            , Html.text " each cycle.)"
+            ]
+
+        CycleStartEffect.PlayerHeals { amount } ->
+            [ Html.text ("Heal " ++ String.fromInt amount ++ " HP.") ]
+
+        CycleStartEffect.PlayerMaxHPChanges { amount } ->
+            if amount < 0 then
+                [ Html.text ("Decrease max HP by " ++ String.fromInt amount ++ ".") ]
+
+            else
+                [ Html.text ("Increase max HP by " ++ String.fromInt amount ++ ".") ]
+
+        CycleStartEffect.PlayerTakesDamage { amount } ->
+            [ Html.text ("Take " ++ String.fromInt amount ++ " damage. (Lose this much HP.)") ]
+
+
 viewPlayerInfo : GameModel -> Html Msg
 viewPlayerInfo gameModel =
     let
@@ -232,33 +350,12 @@ viewPlayerInfo gameModel =
 viewPointsForStat : GameModel -> Stat -> Html msg
 viewPointsForStat gameModel stat =
     let
-        imgForStat : String
-        imgForStat =
-            when stat is
-                Stat.Pink ->
-                    "img/pink-diamond.svg"
-
-                Stat.Yellow ->
-                    "img/yellow-star.svg"
-
-                Stat.Green ->
-                    "img/green-triangle.svg"
-
-                Stat.Blue ->
-                    "img/blue-square.svg"
-
-                Stat.Purple ->
-                    "img/purple-parallelogram.svg"
-
-                Stat.White ->
-                    "img/white-circle.svg"
-
         pointsNextCycle : Int
         pointsNextCycle =
             GameModel.pointsForStatNextCycle stat gameModel
     in
     viewPoints
-        imgForStat
+        (imgForStat stat)
         (Player.pointsForStat stat gameModel.player)
         (Player.totalPointsForCycleForStat stat gameModel.player)
         pointsNextCycle

@@ -1,5 +1,6 @@
 module Quest exposing (..)
 
+import CycleStartEffect exposing (CycleStartEffect)
 import Duration exposing (Duration)
 import Quest.Requirement as Requirement exposing (Requirement)
 import Stat exposing (Stat)
@@ -9,6 +10,7 @@ type alias Quest =
     { title : String
     , requirements : Array Requirement
     , duration : Duration
+    , completionEffects : Array CycleStartEffect
     }
 
 

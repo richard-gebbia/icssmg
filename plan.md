@@ -10,21 +10,11 @@
 - [X] Render the shapes
     - [X] Now do it in Gren
 - [X] Build a simple runnable model
-- [ ] "Quest list" view
-    - [X] Quest title
-    - [X] Points toward requirements
-        - [X] Pips
-        - [X] Add 1 point toward requirement
-        - [X] Add as many points as you can toward requirement
-        - [X] Remove 1 point from a requirement
-        - [X] Remove all points invested in the requirement this cycle
-    - [X] Expiration
-    - [ ] Rewards
-    - [ ] Toggle "Next cycle start" view (empty)
-- [ ] "Next cycle start" view
-    - [ ] Level
-    - [ ] Points toward stats (next cycle)
+- [ ] UI (see below)
+- [ ] Quests give rewards
+- [ ] Actually have HP and max HP change effects do something
 
+# UI
 Two panes, horizontally laid out:
 - Pane 1
     - larger

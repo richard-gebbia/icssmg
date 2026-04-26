@@ -1,5 +1,6 @@
 module GameModel exposing (..)
 
+import CycleStartEffect exposing (CycleStartEffect)
 import Duration exposing (Duration)
 import Player exposing (Player)
 import Quest exposing (Quest)
@@ -13,15 +14,6 @@ type alias GameModel =
     , phase : Phase
     , effects : Array CycleStartEffect
     }
-
-
-type CycleStartEffect
-    = PlayerGetsPoints { stat : Stat, amount : Int, duration : Duration }
-    | PlayerGetsWildPoints { amount : Int, duration : Duration }
-    | PlayerLevelsUp
-    | PlayerHeals { amount : Int }
-    | PlayerMaxHPChanges { amount : Int }
-    | PlayerTakesDamage { amount : Int }
 
 
 type Phase
@@ -52,6 +44,7 @@ init =
         [ { title = "First Quest"
           , requirements = [ QuestReq.init Stat.Blue 1 ]
           , duration = Duration.Permanent
+          , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
           }
         , { title = "Second Quest"
           , requirements =
@@ -60,14 +53,19 @@ init =
                 , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
                 ]
           , duration = Duration.Temp { cyclesLeft = 3 }
+          , completionEffects =
+            [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2, duration = Duration.Temp { cyclesLeft = 2 } }
+            , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+            , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
+            ]
           }
         ]
     , effects =
-        [ PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
-        , PlayerHeals { amount = 2 }
-        , PlayerMaxHPChanges { amount = -1 }
-        , PlayerLevelsUp
-        , PlayerLevelsUp
+        [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
+        , CycleStartEffect.PlayerHeals { amount = 2 }
+        , CycleStartEffect.PlayerMaxHPChanges { amount = -1 }
+        , CycleStartEffect.PlayerLevelsUp
+        , CycleStartEffect.PlayerLevelsUp
         ]
     , phase = SpendingPoints { totalWilds = 1 }
     }
@@ -85,10 +83,10 @@ cycleStartState { player, quests, effects } =
             Array.foldl
                 (\effect numWilds ->
                     when effect is
-                        PlayerGetsWildPoints { amount } ->
+                        CycleStartEffect.PlayerGetsWildPoints { amount } ->
                             numWilds + amount
 
-                        PlayerLevelsUp ->
+                        CycleStartEffect.PlayerLevelsUp ->
                             numWilds + 1
 
                         _ ->
@@ -102,40 +100,50 @@ cycleStartState { player, quests, effects } =
             Array.mapAndKeepJust
                 (\effect ->
                     when effect is
-                        PlayerGetsPoints effect_ ->
+                        CycleStartEffect.PlayerGetsPoints effect_ ->
                             when effect_.duration is
                                 Duration.Temp { cyclesLeft } ->
                                     if cyclesLeft <= 1 then
                                         Nothing
 
                                     else
-                                        Just (PlayerGetsPoints { effect_ | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } })
+                                        Just
+                                            (CycleStartEffect.PlayerGetsPoints
+                                                { effect_
+                                                | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 }
+                                                }
+                                            )
 
                                 Duration.Permanent ->
                                     Just effect
 
-                        PlayerGetsWildPoints effect_ ->
+                        CycleStartEffect.PlayerGetsWildPoints effect_ ->
                             when effect_.duration is
                                 Duration.Temp { cyclesLeft } ->
                                     if cyclesLeft <= 1 then
                                         Nothing
 
                                     else
-                                        Just (PlayerGetsWildPoints { effect_ | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } })
+                                        Just
+                                            (CycleStartEffect.PlayerGetsWildPoints
+                                                { effect_
+                                                | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 }
+                                                }
+                                            )
 
                                 Duration.Permanent ->
                                     Just effect
 
-                        PlayerLevelsUp ->
+                        CycleStartEffect.PlayerLevelsUp ->
                             Nothing
 
-                        PlayerHeals _ ->
+                        CycleStartEffect.PlayerHeals _ ->
                             Nothing
 
-                        PlayerMaxHPChanges _ ->
+                        CycleStartEffect.PlayerMaxHPChanges _ ->
                             Nothing
 
-                        PlayerTakesDamage _ ->
+                        CycleStartEffect.PlayerTakesDamage _ ->
                             Nothing
                 )
                 effects
@@ -145,10 +153,10 @@ cycleStartState { player, quests, effects } =
             Array.foldl
                 (\effect playerIter ->
                     when effect is
-                        PlayerLevelsUp ->
+                        CycleStartEffect.PlayerLevelsUp ->
                             { playerIter | level = playerIter.level + 1 }
 
-                        PlayerGetsPoints { stat, amount } ->
+                        CycleStartEffect.PlayerGetsPoints { stat, amount } ->
                             Player.withPointsChanged stat (\points -> points + amount) playerIter
 
                         _ ->
@@ -156,6 +164,8 @@ cycleStartState { player, quests, effects } =
                 )
                 playerAtCycleStart
                 effects
+
+        -- TODO: change HP and max HP
 
         newQuests : Array Quest
         newQuests =
@@ -277,7 +287,7 @@ pointsForStatNextCycle stat gameModel =
     Array.foldl
         (\effect count ->
             when effect is
-                PlayerGetsPoints effect_ ->
+                CycleStartEffect.PlayerGetsPoints effect_ ->
                     if effect_.stat == stat then
                         when effect_.duration is
                             Duration.Temp { cyclesLeft } ->
@@ -325,7 +335,7 @@ wildsNextCycle gameModel =
     Array.foldl
         (\effect count ->
             when effect is
-                PlayerGetsWildPoints { amount, duration } ->
+                CycleStartEffect.PlayerGetsWildPoints { amount, duration } ->
                     when duration is
                         Duration.Temp { cyclesLeft } ->
                             if 1 < cyclesLeft then
@@ -337,7 +347,7 @@ wildsNextCycle gameModel =
                         Duration.Permanent ->
                             count + amount
 
-                PlayerLevelsUp ->
+                CycleStartEffect.PlayerLevelsUp ->
                     count + 1
 
                 _ ->
@@ -352,10 +362,10 @@ bonusHpNextCycle gameModel =
     Array.foldl
         (\effect count ->
             when effect is
-                PlayerHeals { amount } ->
+                CycleStartEffect.PlayerHeals { amount } ->
                     count + amount
 
-                PlayerTakesDamage { amount } ->
+                CycleStartEffect.PlayerTakesDamage { amount } ->
                     count - amount
 
                 _ ->
@@ -370,7 +380,7 @@ bonusMaxHpNextCycle gameModel =
     Array.foldl
         (\effect count ->
             when effect is
-                PlayerMaxHPChanges { amount } ->
+                CycleStartEffect.PlayerMaxHPChanges { amount } ->
                     count + amount
 
                 _ ->
@@ -385,7 +395,7 @@ bonusLevelsNextCycle gameModel =
     Array.foldl
         (\effect count ->
             when effect is
-                PlayerLevelsUp ->
+                CycleStartEffect.PlayerLevelsUp ->
                     count + 1
 
                 _ ->
