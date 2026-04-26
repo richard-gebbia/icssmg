@@ -41,7 +41,7 @@ body {
     background-color: var(--purple-6);
     color: var(--white);
     font-size: 16pt;
-    font-family: monospace;
+    font-family: "Anta", monospace;
 }
 
 main {
@@ -62,7 +62,7 @@ button {
     padding: 0.25rem 1rem;
     color: var(--white);
     font-size: 16pt;
-    font-family: monospace;
+    font-family: "Anta", monospace;
     cursor: pointer;
     transition: transform 0.2s;
     white-space: nowrap;
