@@ -11,8 +11,10 @@
     - [X] Now do it in Gren
 - [X] Build a simple runnable model
 - [ ] UI (see below)
-- [ ] Quests give rewards
+- [X] Quests give rewards
+- [ ] Commit Cycle
 - [ ] Actually have HP and max HP change effects do something
+- [ ] Distribute wilds phase
 
 # UI
 Two panes, horizontally laid out:
@@ -28,7 +30,7 @@ Two panes, horizontally laid out:
                 X button to add max possible points toward
                 X button to remove one point from
                 X button to remove all points that were put toward this cycle
-            - rewards
+            X rewards
             X expiration
             - what (if anything) happens on expiry
 - Pane 2

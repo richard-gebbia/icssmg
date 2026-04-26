@@ -27,9 +27,9 @@ init =
         { hp = 10
         , maxHP = 10
         , level = 0
-        , pink = 0
+        , pink = 1
         , yellow = 0
-        , green = 2
+        , green = 3
         , blue = 1
         , purple = 0
         , white = 0
@@ -103,7 +103,7 @@ cycleStartState { player, quests, effects } =
                         CycleStartEffect.PlayerGetsPoints effect_ ->
                             when effect_.duration is
                                 Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 1 then
+                                    if cyclesLeft <= 0 then
                                         Nothing
 
                                     else
@@ -173,7 +173,7 @@ cycleStartState { player, quests, effects } =
                 (\quest ->
                     when quest.duration is
                         Duration.Temp { cyclesLeft } ->
-                            if cyclesLeft <= 1 then
+                            if cyclesLeft <= 0 then
                                 Nothing
 
                             else
@@ -291,7 +291,7 @@ pointsForStatNextCycle stat gameModel =
                     if effect_.stat == stat then
                         when effect_.duration is
                             Duration.Temp { cyclesLeft } ->
-                                if 1 < cyclesLeft then
+                                if 0 < cyclesLeft then
                                     count + effect_.amount
 
                                 else
@@ -307,7 +307,7 @@ pointsForStatNextCycle stat gameModel =
                     count
         )
         0
-        gameModel.effects
+        (tentativeEffects gameModel)
 
 
 wildsLeftThisCycle : GameModel -> Int
@@ -338,7 +338,7 @@ wildsNextCycle gameModel =
                 CycleStartEffect.PlayerGetsWildPoints { amount, duration } ->
                     when duration is
                         Duration.Temp { cyclesLeft } ->
-                            if 1 < cyclesLeft then
+                            if 0 < cyclesLeft then
                                 count + amount
 
                             else
@@ -354,7 +354,7 @@ wildsNextCycle gameModel =
                     count
         )
         gameModel.player.level
-        gameModel.effects
+        (tentativeEffects gameModel)
 
 
 bonusHpNextCycle : GameModel -> Int
@@ -372,7 +372,7 @@ bonusHpNextCycle gameModel =
                     count
         )
         0
-        gameModel.effects
+        (tentativeEffects gameModel)
 
 
 bonusMaxHpNextCycle : GameModel -> Int
@@ -387,7 +387,7 @@ bonusMaxHpNextCycle gameModel =
                     count
         )
         0
-        gameModel.effects
+        (tentativeEffects gameModel)
 
 
 bonusLevelsNextCycle : GameModel -> Int
@@ -402,4 +402,18 @@ bonusLevelsNextCycle gameModel =
                     count
         )
         0
-        gameModel.effects
+        (tentativeEffects gameModel)
+
+
+tentativeEffects : GameModel -> Array CycleStartEffect
+tentativeEffects {quests, effects} =
+    effects ++
+        (Array.mapAndFlatten
+            (\quest ->
+                if not (Quest.isCompleted quest) then
+                    []
+                else
+                    quest.completionEffects
+            )
+            quests
+        )
