@@ -60,7 +60,7 @@ viewQuest player isCommittingCycle questId quest =
                         )
                     ]
                 , Html.div [ HtmlAttrs.class "pips" ]
-                    (Array.indexedMap (pipRow player questId) quest.requirements)
+                    (Array.indexedMap (pipRow player questId) quest.requirements |> Array.flatten)
                 , Html.hr [] []
                 , Html.div [ HtmlAttrs.class "rewards-section" ]
                     [ Html.b [] [ Html.text "On completion:" ]
@@ -87,7 +87,7 @@ viewQuest player isCommittingCycle questId quest =
     }
 
 
-pipRow : Player -> Int -> Int -> QuestReq.Requirement -> Html Msg
+pipRow : Player -> Int -> Int -> QuestReq.Requirement -> Array (Html Msg)
 pipRow player questId reqIdx requirement =
     let
         stat : Stat
@@ -122,18 +122,18 @@ pipRow player questId reqIdx requirement =
         wildImg =
             Html.img [ HtmlAttrs.src "img/wild-blob.svg", HtmlAttrs.width 16, HtmlAttrs.height 16 ] []
     in
-    Html.div [ HtmlAttrs.class "pip-row" ]
-        [ Html.div
-            [ HtmlAttrs.class "pip-row-header"
-            , HtmlAttrs.classList [ { class = "completed", enabled = isCompleted } ]
-            ]
-            [ Html.text
-                (String.fromInt (QuestReq.pointsTowardCompletion requirement)
-                    ++ "/"
-                    ++ String.fromInt (QuestReq.total requirement)
-                )
-            ]
-        , Html.button
+    [ Html.div
+        [ HtmlAttrs.class "pip-row-header"
+        , HtmlAttrs.classList [ { class = "completed", enabled = isCompleted } ]
+        ]
+        [ Html.text
+            (String.fromInt (QuestReq.pointsTowardCompletion requirement)
+                ++ "/"
+                ++ String.fromInt (QuestReq.total requirement)
+            )
+        ]
+    , Html.div [ HtmlAttrs.class "pip-row-buttons" ]
+        [ Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled cantPutInMoreNormalPoints
             , HtmlEvents.onClick (Msg.PlayerPutPointIntoQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
@@ -183,16 +183,17 @@ pipRow player questId reqIdx requirement =
              else
                 [ Html.text ("-All (" ++ String.fromInt wildPointsInReqThisCycle), wildImg, Html.text ")" ]
             )
-        , Html.div [ HtmlAttrs.class "pip-row-pips" ]
-            (Array.map
-                (\i ->
-                    pointPip
-                        (i < QuestReq.pointsTowardCompletion requirement)
-                        (QuestReq.stat requirement)
-                )
-                (Array.range 0 (QuestReq.total requirement - 1))
-            )
         ]
+    , Html.div [ HtmlAttrs.class "pip-row-pips" ]
+        (Array.map
+            (\i ->
+                pointPip
+                    (i < QuestReq.pointsTowardCompletion requirement)
+                    (QuestReq.stat requirement)
+            )
+            (Array.range 0 (QuestReq.total requirement - 1))
+        )
+    ]
 
 
 pointPip : Bool -> Stat -> Html msg

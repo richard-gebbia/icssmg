@@ -10,7 +10,7 @@
 - [X] Render the shapes
     - [X] Now do it in Gren
 - [X] Build a simple runnable model
-- [ ] UI (see below)
+- [X] UI (see below)
 - [X] Quests give rewards
 - [X] Commit Cycle
 - [X] Actually have HP and max HP change effects do something
@@ -18,7 +18,8 @@
 - [X] Cycle number
 - [X] Rework wilds (player has wilds, additional buttons to spend wilds on quest requirements)
 - [X] Test many points for a requirement
-- [ ] Font
+- [X] Grid layout for quest
+- [X] Font
 - [ ] Background
 - [ ] Content!
 - [ ] Find minimal repro for a bug with Gren formatter
@@ -47,11 +48,9 @@ Two panes, horizontally laid out:
         X Player HP/Max HP next cycle
         X Player Level
         X Player level next cycle
-        - Stats, for each
+        X Stats, for each
             X points currently held this cycle
             X total points this cycle
             X points player will get next cycle
-            - button to add wild to stat
-            - button to remove wild from stat
         X Wilds player will get next cycle
-        - Button to confirm wild distribution or end cycle depending on the phase (at the bottom)
+        X Button to end cycle depending
