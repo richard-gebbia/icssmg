@@ -64,6 +64,12 @@ init =
                     , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
                     ]
                 }
+            |> Dict.set 3
+                { title = "Third Quest"
+                , requirements = [ QuestReq.init Stat.Blue 1 ]
+                , duration = Duration.Permanent
+                , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
+                }
     , effects =
         [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
         , CycleStartEffect.PlayerHeals { amount = 2 }

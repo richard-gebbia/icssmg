@@ -272,7 +272,7 @@ viewCycleStartEffect effect =
                     ]
 
         CycleStartEffect.PlayerLevelsUp ->
-            [ Html.text "Level up! (Get one more "
+            [ Html.text "Level up! (Get an additional "
             , wildImg
             , Html.text " each cycle.)"
             ]

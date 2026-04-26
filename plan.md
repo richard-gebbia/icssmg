@@ -14,6 +14,8 @@
 - [X] Quests give rewards
 - [X] Commit Cycle
 - [X] Actually have HP and max HP change effects do something
+- [X] Scrollable quest display
+- [ ] Cycle number
 - [ ] Distribute wilds phase
 - [ ] Find minimal repro for a bug with Gren formatter
 

@@ -122,6 +122,7 @@ hr {
     flex-direction: column;
     gap: 1rem;
     padding-left: 0px;
+    overflow-y: auto;
 }
 
 .quest-grid-container {
