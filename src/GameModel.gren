@@ -22,8 +22,8 @@ type CycleStartEffect
 
 
 type Phase
-    = DistributingWilds { wilds : Int }
-    | SpendingPoints
+    = DistributingWilds { wildsLeft : Int, totalWilds : Int }
+    | SpendingPoints { totalWilds : Int }
 
 
 init : GameModel
@@ -59,8 +59,8 @@ init =
           , duration = Duration.Temp { cyclesLeft = 3 }
           }
         ]
-    , effects = []
-    , phase = SpendingPoints
+    , effects = [ PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } } ]
+    , phase = SpendingPoints { totalWilds = 1 }
     }
 
 
@@ -158,7 +158,7 @@ cycleStartState { player, quests, effects } =
     in
     { player = playerWithNewPointsAndLevel
     , quests = newQuests
-    , phase = DistributingWilds { wilds = wilds }
+    , phase = DistributingWilds { wildsLeft = wilds, totalWilds = wilds }
     , effects = newEffects
     }
 
@@ -252,3 +252,78 @@ withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat gameModel =
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
     , quests = Array.update questIdx (Quest.withPointsRemovedFromRequirement points reqIdx) gameModel.quests
     }
+
+
+pointsForStatNextCycle : Stat -> GameModel -> Int
+pointsForStatNextCycle stat gameModel =
+    Array.foldl
+        (\effect count ->
+            when effect is
+                PlayerGetsPoints effect_ ->
+                    if effect_.stat == stat then
+                        when effect_.duration is
+                            Duration.Temp { cyclesLeft } ->
+                                if 1 < cyclesLeft then
+                                    count + effect_.amount
+
+                                else
+                                    count
+
+                            Duration.Permanent ->
+                                count + effect_.amount
+
+                    else
+                        count
+
+                _ ->
+                    count
+        )
+        0
+        gameModel.effects
+
+
+wildsLeftThisCycle : GameModel -> Int
+wildsLeftThisCycle gameModel =
+    when gameModel.phase is
+        DistributingWilds { wildsLeft } ->
+            wildsLeft
+
+        SpendingPoints _ ->
+            0
+
+
+totalWildsThisCycle : GameModel -> Int
+totalWildsThisCycle gameModel =
+    when gameModel.phase is
+        DistributingWilds { totalWilds } ->
+            totalWilds
+
+        SpendingPoints { totalWilds } ->
+            totalWilds
+
+
+wildsNextCycle : GameModel -> Int
+wildsNextCycle gameModel =
+    Array.foldl
+        (\effect count ->
+            when effect is
+                PlayerGetsWildPoints { amount, duration } ->
+                    when duration is
+                        Duration.Temp { cyclesLeft } ->
+                            if 1 < cyclesLeft then
+                                count + amount
+
+                            else
+                                count
+
+                        Duration.Permanent ->
+                            count + amount
+
+                PlayerLevelsUp ->
+                    count + 1
+
+                _ ->
+                    count
+        )
+        gameModel.player.level
+        gameModel.effects

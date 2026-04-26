@@ -91,7 +91,7 @@ hr {
 }
 
 .completing-quests-frame {
-    padding: 1rem;
+    padding: 2rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -236,7 +236,14 @@ hr {
 .player-info-panel {
     border-left: 4px var(--white) solid;
     width: 400px;
-    padding: 1rem;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: space-between;
+}
+
+.player-info-panel-top-section {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -244,4 +251,14 @@ hr {
 
 .player-info-line {
     font-size: 24pt;
+}
+
+.bonus-next-cycle {
+    color: var(--cyan-1);
+}
+
+.complete-button {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    justify-self: end;
 }

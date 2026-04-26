@@ -153,29 +153,37 @@ pointPip isFulfilled stat =
 viewPlayerInfo : GameModel -> Html Msg
 viewPlayerInfo gameModel =
     Html.section [ HtmlAttrs.class "player-info-panel" ]
-        [ Html.div [ HtmlAttrs.class "player-info-line" ]
-            [ Html.b [] [ Html.text "HP: " ]
-            , Html.text (String.fromInt gameModel.player.hp ++ "/" ++ String.fromInt gameModel.player.maxHP)
-            ]
-        , Html.div [ HtmlAttrs.class "player-info-line" ]
-            [ Html.b [] [ Html.text "Level: " ]
-            , Html.text (String.fromInt gameModel.player.level)
-            ]
-        , Html.section [ HtmlAttrs.class "points-list" ]
-            (Array.map (\stat -> viewPointsForStat gameModel.player stat)
-                [ Stat.Pink
-                , Stat.Yellow
-                , Stat.Green
-                , Stat.Blue
-                , Stat.Purple
-                , Stat.White
+        [ Html.div [ HtmlAttrs.class "player-info-panel-top-section" ]
+            [ Html.div [ HtmlAttrs.class "player-info-line" ]
+                [ Html.b [] [ Html.text "HP: " ]
+                , Html.text (String.fromInt gameModel.player.hp ++ "/" ++ String.fromInt gameModel.player.maxHP)
                 ]
-            )
+            , Html.div [ HtmlAttrs.class "player-info-line" ]
+                [ Html.b [] [ Html.text "Level: " ]
+                , Html.text (String.fromInt gameModel.player.level)
+                ]
+            , Html.section [ HtmlAttrs.class "points-list" ]
+                (Array.map (\stat -> viewPointsForStat gameModel stat)
+                    [ Stat.Pink
+                    , Stat.Yellow
+                    , Stat.Green
+                    , Stat.Blue
+                    , Stat.Purple
+                    , Stat.White
+                    ]
+                    ++ [ viewWilds gameModel ]
+                )
+            ]
+        , Html.button
+            [ HtmlAttrs.type_ "button"
+            , HtmlAttrs.class "button complete-button"
+            ]
+            [ Html.text "Commit Cycle" ]
         ]
 
 
-viewPointsForStat : Player -> Stat -> Html Msg
-viewPointsForStat player stat =
+viewPointsForStat : GameModel -> Stat -> Html msg
+viewPointsForStat gameModel stat =
     let
         imgForStat : String
         imgForStat =
@@ -197,14 +205,39 @@ viewPointsForStat player stat =
 
                 Stat.White ->
                     "img/white-circle.svg"
+
+        pointsNextCycle : Int
+        pointsNextCycle =
+            GameModel.pointsForStatNextCycle stat gameModel
     in
+    viewPoints
+        imgForStat
+        (Player.pointsForStat stat gameModel.player)
+        (Player.totalPointsForCycleForStat stat gameModel.player)
+        pointsNextCycle
+
+
+viewWilds : GameModel -> Html msg
+viewWilds gameModel =
+    viewPoints
+        "img/wild-blob.svg"
+        (GameModel.wildsLeftThisCycle gameModel)
+        (GameModel.totalWildsThisCycle gameModel)
+        (GameModel.wildsNextCycle gameModel)
+
+
+viewPoints : String -> Int -> Int -> Int -> Html msg
+viewPoints imgSrc numLeftThisCycle totalThisCycle pointsNextCycle =
     Html.div [ HtmlAttrs.class "stat-point-container" ]
-        [ Html.img [ HtmlAttrs.src imgForStat, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+        [ Html.img [ HtmlAttrs.src imgSrc, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
         , Html.div []
             [ Html.text
-                (String.fromInt (Player.pointsForStat stat player)
+                (String.fromInt numLeftThisCycle
                     ++ "/"
-                    ++ String.fromInt (Player.totalPointsForCycleForStat stat player)
+                    ++ String.fromInt totalThisCycle
                 )
             ]
+        , Html.div
+            [ HtmlAttrs.classList [ { class = "bonus-next-cycle", enabled = 0 < pointsNextCycle } ] ]
+            [ Html.text ("(+" ++ String.fromInt pointsNextCycle ++ ")") ]
         ]
