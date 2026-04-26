@@ -384,7 +384,7 @@ viewPlayerInfo gameModel isCommittingCycle =
                     Html.text ""
                 ]
             , Html.section [ HtmlAttrs.class "points-list" ]
-                (Array.map (\stat -> viewPointsForStat gameModel stat)
+                (Array.mapAndFlatten (\stat -> viewPointsForStat gameModel stat)
                     [ Stat.Pink
                     , Stat.Yellow
                     , Stat.Green
@@ -412,7 +412,7 @@ viewPlayerInfo gameModel isCommittingCycle =
         ]
 
 
-viewPointsForStat : GameModel -> Stat -> Html msg
+viewPointsForStat : GameModel -> Stat -> Array (Html msg)
 viewPointsForStat gameModel stat =
     let
         pointsNextCycle : Int
@@ -426,18 +426,13 @@ viewPointsForStat gameModel stat =
         pointsNextCycle
 
 
-viewPoints : String -> Int -> Int -> Int -> Html msg
+viewPoints : String -> Int -> Int -> Int -> Array (Html msg)
 viewPoints imgSrc numLeftThisCycle totalThisCycle pointsNextCycle =
-    Html.div [ HtmlAttrs.class "stat-point-container" ]
-        [ Html.img [ HtmlAttrs.src imgSrc, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
-        , Html.div []
-            [ Html.text
-                (String.fromInt numLeftThisCycle
-                    ++ "/"
-                    ++ String.fromInt totalThisCycle
-                )
-            ]
-        , Html.div
-            [ HtmlAttrs.classList [ { class = "bonus-next-cycle", enabled = 0 < pointsNextCycle } ] ]
-            [ Html.text ("(+" ++ String.fromInt pointsNextCycle ++ ")") ]
-        ]
+    [ Html.img [ HtmlAttrs.src imgSrc, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
+    , Html.div [] [ Html.text (String.fromInt numLeftThisCycle) ]
+    , Html.div [] [ Html.text "/" ]
+    , Html.div [] [ Html.text (String.fromInt totalThisCycle) ]
+    , Html.div
+        [ HtmlAttrs.classList [ { class = "bonus-next-cycle", enabled = 0 < pointsNextCycle } ] ]
+        [ Html.text ("(+" ++ String.fromInt pointsNextCycle ++ ")") ]
+    ]
