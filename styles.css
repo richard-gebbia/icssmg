@@ -38,7 +38,7 @@
 }
 
 body {
-    background-color: var(--purple-6);
+    background-image: url("img/space-background.png");
     color: var(--white);
     font-size: 16pt;
     font-family: "Anta", monospace;
@@ -89,6 +89,7 @@ hr {
     border: 4px var(--white) solid;
     border-radius: 16px;
     display: flex;
+    background-color: var(--purple-6);
 }
 
 .completing-quests-frame {
