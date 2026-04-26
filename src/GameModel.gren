@@ -14,14 +14,8 @@ type alias GameModel =
     { player : Player
     , cycle : Int
     , quests : Dict ID Quest
-    , phase : Phase
     , effects : Array CycleStartEffect
     }
-
-
-type Phase
-    = DistributingWilds { wildsLeft : Int, totalWilds : Int }
-    | SpendingPoints { totalWilds : Int }
 
 
 init : GameModel
@@ -36,12 +30,14 @@ init =
         , blue = 1
         , purple = 0
         , white = 0
+        , wild = 2
         , pinkTotalForCycle = 0
         , yellowTotalForCycle = 0
         , greenTotalForCycle = 2
         , blueTotalForCycle = 1
         , purpleTotalForCycle = 0
         , whiteTotalForCycle = 0
+        , wildTotalForCycle = 2
         }
     , cycle = 1
     , quests =
@@ -79,7 +75,6 @@ init =
         , CycleStartEffect.PlayerLevelsUp
         , CycleStartEffect.PlayerLevelsUp
         ]
-    , phase = SpendingPoints { totalWilds = 1 }
     }
 
 
@@ -95,9 +90,6 @@ nextCycleStartState { player, cycle, quests, effects } =
             Array.foldl
                 (\effect numWilds ->
                     when effect is
-                        CycleStartEffect.PlayerGetsWildPoints { amount } ->
-                            numWilds + amount
-
                         CycleStartEffect.PlayerLevelsUp ->
                             numWilds + 1
 
@@ -129,23 +121,6 @@ nextCycleStartState { player, cycle, quests, effects } =
                                 Duration.Permanent ->
                                     Just effect
 
-                        CycleStartEffect.PlayerGetsWildPoints effect_ ->
-                            when effect_.duration is
-                                Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 1 then
-                                        Nothing
-
-                                    else
-                                        Just
-                                            (CycleStartEffect.PlayerGetsWildPoints
-                                                { effect_
-                                                | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 }
-                                                }
-                                            )
-
-                                Duration.Permanent ->
-                                    Just effect
-
                         CycleStartEffect.PlayerLevelsUp ->
                             Nothing
 
@@ -156,6 +131,9 @@ nextCycleStartState { player, cycle, quests, effects } =
                             Nothing
 
                         CycleStartEffect.PlayerTakesDamage _ ->
+                            Nothing
+
+                        CycleStartEffect.ThisShouldNeverDoAnythingButDontDelete ->
                             Nothing
                 )
                 effects
@@ -180,7 +158,7 @@ nextCycleStartState { player, cycle, quests, effects } =
                         CycleStartEffect.PlayerTakesDamage { amount } ->
                             Player.withHpChanged -amount playerIter
 
-                        _ ->
+                        CycleStartEffect.ThisShouldNeverDoAnythingButDontDelete ->
                             playerIter
                 )
                 playerAtCycleStart
@@ -211,7 +189,6 @@ nextCycleStartState { player, cycle, quests, effects } =
     { player = playerWithNewPointsAndLevel
     , quests = newQuests
     , cycle = cycle + 1
-    , phase = DistributingWilds { wildsLeft = wilds, totalWilds = wilds }
     , effects = newEffects
     }
 
@@ -302,53 +279,6 @@ pointsForStatNextCycle stat gameModel =
                     count
         )
         0
-        (tentativeEffects gameModel)
-
-
-wildsLeftThisCycle : GameModel -> Int
-wildsLeftThisCycle gameModel =
-    when gameModel.phase is
-        DistributingWilds { wildsLeft } ->
-            wildsLeft
-
-        SpendingPoints _ ->
-            0
-
-
-totalWildsThisCycle : GameModel -> Int
-totalWildsThisCycle gameModel =
-    when gameModel.phase is
-        DistributingWilds { totalWilds } ->
-            totalWilds
-
-        SpendingPoints { totalWilds } ->
-            totalWilds
-
-
-wildsNextCycle : GameModel -> Int
-wildsNextCycle gameModel =
-    Array.foldl
-        (\effect count ->
-            when effect is
-                CycleStartEffect.PlayerGetsWildPoints { amount, duration } ->
-                    when duration is
-                        Duration.Temp { cyclesLeft } ->
-                            if 0 < cyclesLeft then
-                                count + amount
-
-                            else
-                                count
-
-                        Duration.Permanent ->
-                            count + amount
-
-                CycleStartEffect.PlayerLevelsUp ->
-                    count + 1
-
-                _ ->
-                    count
-        )
-        gameModel.player.level
         (tentativeEffects gameModel)
 
 

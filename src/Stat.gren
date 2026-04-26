@@ -10,3 +10,4 @@ type Stat
     | Blue
     | Purple
     | White
+    | Wild

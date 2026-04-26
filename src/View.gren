@@ -169,6 +169,9 @@ pointPip isFulfilled stat =
                 Stat.White ->
                     "pip-white"
 
+                _ ->
+                    ""
+
         classForFulfilled : String
         classForFulfilled =
             if isFulfilled then
@@ -206,14 +209,12 @@ imgForStat stat =
         Stat.White ->
             "img/white-circle.svg"
 
+        Stat.Wild ->
+            "img/wild-blob.svg"
+
 
 viewCycleStartEffect : CycleStartEffect -> Array (Html msg)
 viewCycleStartEffect effect =
-    let
-        wildImg : Html msg
-        wildImg =
-            Html.img [ HtmlAttrs.src "img/wild-blob.svg", HtmlAttrs.width 16, HtmlAttrs.height 16 ] []
-    in
     when effect is
         CycleStartEffect.PlayerGetsPoints { stat, amount, duration } ->
             let
@@ -245,35 +246,9 @@ viewCycleStartEffect effect =
                     , Html.text " permanently."
                     ]
 
-        CycleStartEffect.PlayerGetsWildPoints { amount, duration } ->
-            let
-                getLine : Html msg
-                getLine =
-                    Html.text ("Get +" ++ String.fromInt amount)
-            in
-            when duration is
-                Duration.Temp { cyclesLeft } ->
-                    if cyclesLeft <= 1 then
-                        [ getLine
-                        , wildImg
-                        , Html.text " next cycle."
-                        ]
-
-                    else
-                        [ getLine
-                        , wildImg
-                        , Html.text (" for the next " ++ String.fromInt cyclesLeft ++ " cycles.")
-                        ]
-
-                Duration.Permanent ->
-                    [ getLine
-                    , wildImg
-                    , Html.text " permanently."
-                    ]
-
         CycleStartEffect.PlayerLevelsUp ->
             [ Html.text "Level up! (Get an additional "
-            , wildImg
+            , Html.img [ HtmlAttrs.src "img/wild-blob.svg", HtmlAttrs.width 16, HtmlAttrs.height 16 ] []
             , Html.text " each cycle.)"
             ]
 
@@ -289,6 +264,9 @@ viewCycleStartEffect effect =
 
         CycleStartEffect.PlayerTakesDamage { amount } ->
             [ Html.text ("Take " ++ String.fromInt amount ++ " damage. (Lose this much HP.)") ]
+
+        CycleStartEffect.ThisShouldNeverDoAnythingButDontDelete ->
+            [ Html.text "NEVER" ]
 
 
 viewPlayerInfo : GameModel -> Bool -> Html Msg
@@ -362,8 +340,8 @@ viewPlayerInfo gameModel isCommittingCycle =
                     , Stat.Blue
                     , Stat.Purple
                     , Stat.White
+                    , Stat.Wild
                     ]
-                    ++ [ viewWilds gameModel ]
                 )
             ]
         , Html.button
@@ -395,15 +373,6 @@ viewPointsForStat gameModel stat =
         (Player.pointsForStat stat gameModel.player)
         (Player.totalPointsForCycleForStat stat gameModel.player)
         pointsNextCycle
-
-
-viewWilds : GameModel -> Html msg
-viewWilds gameModel =
-    viewPoints
-        "img/wild-blob.svg"
-        (GameModel.wildsLeftThisCycle gameModel)
-        (GameModel.totalWildsThisCycle gameModel)
-        (GameModel.wildsNextCycle gameModel)
 
 
 viewPoints : String -> Int -> Int -> Int -> Html msg

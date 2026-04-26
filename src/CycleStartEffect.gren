@@ -6,8 +6,8 @@ import Stat exposing (Stat)
 
 type CycleStartEffect
     = PlayerGetsPoints { stat : Stat, amount : Int, duration : Duration }
-    | PlayerGetsWildPoints { amount : Int, duration : Duration }
     | PlayerLevelsUp
     | PlayerHeals { amount : Int }
     | PlayerMaxHPChanges { amount : Int }
     | PlayerTakesDamage { amount : Int }
+    | ThisShouldNeverDoAnythingButDontDelete

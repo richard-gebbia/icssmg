@@ -14,12 +14,14 @@ type alias Player =
     , blue : Int
     , purple : Int
     , white : Int
+    , wild : Int
     , pinkTotalForCycle : Int
     , yellowTotalForCycle : Int
     , greenTotalForCycle : Int
     , blueTotalForCycle : Int
     , purpleTotalForCycle : Int
     , whiteTotalForCycle : Int
+    , wildTotalForCycle : Int
     }
 
 
@@ -42,7 +44,7 @@ nextCycleStartState player =
 
 
 pointsForStat : Stat -> Player -> Int
-pointsForStat stat { pink, yellow, green, blue, purple, white } =
+pointsForStat stat { pink, yellow, green, blue, purple, white, wild } =
     when stat is
         Stat.Pink ->
             pink
@@ -61,6 +63,9 @@ pointsForStat stat { pink, yellow, green, blue, purple, white } =
 
         Stat.White ->
             white
+
+        Stat.Wild ->
+            wild
 
 
 totalPointsForCycleForStat : Stat -> Player -> Int
@@ -84,6 +89,9 @@ totalPointsForCycleForStat stat player =
         Stat.White ->
             player.whiteTotalForCycle
 
+        Stat.Wild ->
+            player.wildTotalForCycle
+
 
 withPointsChanged : Stat -> (Int -> Int) -> Player -> Player
 withPointsChanged stat statChange player =
@@ -105,6 +113,9 @@ withPointsChanged stat statChange player =
 
         Stat.White ->
             { player | white = statChange player.white }
+
+        Stat.Wild ->
+            { player | wild = statChange player.wild }
 
 
 withExtraPointsMidCycle : Stat -> Int -> Player -> Player
@@ -144,6 +155,12 @@ withExtraPointsMidCycle stat amount player =
             { player
             | white = player.white + amount
             , whiteTotalForCycle = player.whiteTotalForCycle + amount
+            }
+
+        Stat.Wild ->
+            { player
+            | wild = player.wild + amount
+            , whiteTotalForCycle = player.wildTotalForCycle + amount
             }
 
 
