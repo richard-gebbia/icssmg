@@ -6,7 +6,8 @@ import Stat exposing (Stat)
 
 type Msg
     = PlayerPutPointIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
-    | PlayerPutsMaxPointsIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
+    | PlayerPutWildPointIntoQuestReq { questId : ID, reqIdx : Int }
+    | PlayerPutMaxPointsIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerRemovesPointFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerRemovesAllPointsFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerCommitsCurrentCycle

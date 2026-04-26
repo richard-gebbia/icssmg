@@ -1,4 +1,4 @@
-module Quest.Requirement exposing (Requirement, init, isCompleted, nextCycleStartState, pointsAddedInCurrentCycle, pointsNeededToComplete, pointsTowardCompletion, stat, total, withPointsAdded, withPointsRemoved)
+module Quest.Requirement exposing (Requirement, init, isCompleted, nextCycleStartState, normalPointsAddedInCurrentCycle, pointsNeededToComplete, pointsTowardCompletion, stat, total, wildPointsAddedInCurrentCycle, withAllPointsRemoved, withNormalPointsAdded, withNormalPointsRemoved, withWildPointAdded, withWildPointRemoved)
 
 import Stat exposing (Stat)
 
@@ -7,7 +7,8 @@ type alias Requirement =
     { stat_ : Stat
     , amount : Int
     , pointsAddedPreviously : Int
-    , pointsAddedInCurrentCycle_ : Int
+    , normalPointsAddedInCurrentCycle_ : Int
+    , wildPointsAddedInCurrentCycle_ : Int
     }
 
 
@@ -16,13 +17,16 @@ init stat_ amount =
     { stat_ = stat_
     , amount = amount
     , pointsAddedPreviously = 0
-    , pointsAddedInCurrentCycle_ = 0
+    , normalPointsAddedInCurrentCycle_ = 0
+    , wildPointsAddedInCurrentCycle_ = 0
     }
 
 
 pointsTowardCompletion : Requirement -> Int
-pointsTowardCompletion { pointsAddedPreviously, pointsAddedInCurrentCycle_ } =
-    pointsAddedPreviously + pointsAddedInCurrentCycle_
+pointsTowardCompletion requirement =
+    requirement.pointsAddedPreviously
+        + requirement.normalPointsAddedInCurrentCycle_
+        + requirement.wildPointsAddedInCurrentCycle_
 
 
 isCompleted : Requirement -> Bool
@@ -40,23 +44,50 @@ total =
     .amount
 
 
-withPointsAdded : Int -> Requirement -> Requirement
-withPointsAdded points requirement =
+withNormalPointsAdded : Int -> Requirement -> Requirement
+withNormalPointsAdded points requirement =
     { requirement
-    | pointsAddedInCurrentCycle_ = requirement.pointsAddedInCurrentCycle_ + points
+    | normalPointsAddedInCurrentCycle_ = requirement.normalPointsAddedInCurrentCycle_ + points
     }
 
 
-withPointsRemoved : Int -> Requirement -> Requirement
-withPointsRemoved points requirement =
+withNormalPointsRemoved : Int -> Requirement -> Requirement
+withNormalPointsRemoved points requirement =
     { requirement
-    | pointsAddedInCurrentCycle_ = requirement.pointsAddedInCurrentCycle_ - points
+    | normalPointsAddedInCurrentCycle_ = requirement.normalPointsAddedInCurrentCycle_ - points
     }
 
 
-pointsAddedInCurrentCycle : Requirement -> Int
-pointsAddedInCurrentCycle =
-    .pointsAddedInCurrentCycle_
+withWildPointAdded : Requirement -> Requirement
+withWildPointAdded requirement =
+    { requirement
+    | wildPointsAddedInCurrentCycle_ = requirement.wildPointsAddedInCurrentCycle_ + 1
+    }
+
+
+withWildPointRemoved : Requirement -> Requirement
+withWildPointRemoved requirement =
+    { requirement
+    | wildPointsAddedInCurrentCycle_ = requirement.wildPointsAddedInCurrentCycle_ - 1
+    }
+
+
+withAllPointsRemoved : Requirement -> Requirement
+withAllPointsRemoved requirement =
+    { requirement
+    | normalPointsAddedInCurrentCycle_ = 0
+    , wildPointsAddedInCurrentCycle_ = 0
+    }
+
+
+normalPointsAddedInCurrentCycle : Requirement -> Int
+normalPointsAddedInCurrentCycle =
+    .normalPointsAddedInCurrentCycle_
+
+
+wildPointsAddedInCurrentCycle : Requirement -> Int
+wildPointsAddedInCurrentCycle =
+    .wildPointsAddedInCurrentCycle_
 
 
 pointsNeededToComplete : Requirement -> Int
@@ -67,6 +98,6 @@ pointsNeededToComplete requirement =
 nextCycleStartState : Requirement -> Requirement
 nextCycleStartState requirement =
     { requirement
-    | pointsAddedPreviously = requirement.pointsAddedPreviously + requirement.pointsAddedInCurrentCycle_
-    , pointsAddedInCurrentCycle_ = 0
+    | pointsAddedPreviously = requirement.pointsAddedPreviously + requirement.normalPointsAddedInCurrentCycle_
+    , normalPointsAddedInCurrentCycle_ = 0
     }

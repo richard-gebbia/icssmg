@@ -118,52 +118,6 @@ withPointsChanged stat statChange player =
             { player | wild = statChange player.wild }
 
 
-withExtraPointsMidCycle : Stat -> Int -> Player -> Player
-withExtraPointsMidCycle stat amount player =
-    when stat is
-        Stat.Pink ->
-            { player
-            | pink = player.pink + amount
-            , pinkTotalForCycle = player.pinkTotalForCycle + amount
-            }
-
-        Stat.Yellow ->
-            { player
-            | yellow = player.yellow + amount
-            , yellowTotalForCycle = player.yellowTotalForCycle + amount
-            }
-
-        Stat.Green ->
-            { player
-            | green = player.green + amount
-            , greenTotalForCycle = player.greenTotalForCycle + amount
-            }
-
-        Stat.Blue ->
-            { player
-            | blue = player.blue + amount
-            , blueTotalForCycle = player.blueTotalForCycle + amount
-            }
-
-        Stat.Purple ->
-            { player
-            | purple = player.purple + amount
-            , purpleTotalForCycle = player.purpleTotalForCycle + amount
-            }
-
-        Stat.White ->
-            { player
-            | white = player.white + amount
-            , whiteTotalForCycle = player.whiteTotalForCycle + amount
-            }
-
-        Stat.Wild ->
-            { player
-            | wild = player.wild + amount
-            , whiteTotalForCycle = player.wildTotalForCycle + amount
-            }
-
-
 {-| Updates HP. This can make the player HP go above max HP for optimization purposes.
     Call adjustedForMaxHP after all HP effects are evaluated to factor in Max HP.
 -}

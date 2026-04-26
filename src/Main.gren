@@ -42,17 +42,22 @@ update : Msg -> Model -> { model : Model, command : Cmd Msg }
 update msg model =
     when msg is
         Msg.PlayerPutPointIntoQuestReq { questId, reqIdx, stat } ->
-            { model = { model | gameModel = GameModel.withPlayerPuttingPointsIntoQuestReq questId reqIdx stat 1 model.gameModel }
+            { model = { model | gameModel = GameModel.withPlayerPuttingNormalPointsIntoQuestReq questId reqIdx stat 1 model.gameModel }
             , command = Cmd.none
             }
 
-        Msg.PlayerPutsMaxPointsIntoQuestReq { questId, reqIdx, stat } ->
+        Msg.PlayerPutWildPointIntoQuestReq { questId, reqIdx } ->
+            { model = { model | gameModel = GameModel.withPlayerPuttingWildPointIntoQuestReq questId reqIdx model.gameModel }
+            , command = Cmd.none
+            }
+
+        Msg.PlayerPutMaxPointsIntoQuestReq { questId, reqIdx, stat } ->
             { model = { model | gameModel = GameModel.withPlayerPuttingMaxPointsIntoQuestReq questId reqIdx stat model.gameModel }
             , command = Cmd.none
             }
 
         Msg.PlayerRemovesPointFromQuestReq { questId, reqIdx, stat } ->
-            { model = { model | gameModel = GameModel.withPlayerRemovingPointsFromQuestReq questId reqIdx stat 1 model.gameModel }
+            { model = { model | gameModel = GameModel.withPlayerRemovingNormalPointsFromQuestReq questId reqIdx stat 1 model.gameModel }
             , command = Cmd.none
             }
 

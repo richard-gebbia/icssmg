@@ -51,9 +51,9 @@ init =
             |> Dict.set 2
                 { title = "Second Quest"
                 , requirements =
-                    [ QuestReq.init Stat.Green 4 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
-                    , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.nextCycleStartState
-                    , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
+                    [ QuestReq.init Stat.Green 4 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
+                    , QuestReq.init Stat.Pink 3 |> QuestReq.withNormalPointsAdded 2 |> QuestReq.nextCycleStartState
+                    , QuestReq.init Stat.Purple 1 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
                     ]
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
@@ -84,20 +84,6 @@ nextCycleStartState { player, cycle, quests, effects } =
         playerAtCycleStart : Player
         playerAtCycleStart =
             Player.nextCycleStartState player
-
-        wilds : Int
-        wilds =
-            Array.foldl
-                (\effect numWilds ->
-                    when effect is
-                        CycleStartEffect.PlayerLevelsUp ->
-                            numWilds + 1
-
-                        _ ->
-                            numWilds
-                )
-                playerAtCycleStart.level
-                effects
 
         newEffects : Array CycleStartEffect
         newEffects =
@@ -200,11 +186,19 @@ doesPlayerMeetQuestRequirements player quest =
         quest.requirements
 
 
-withPlayerPuttingPointsIntoQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
-withPlayerPuttingPointsIntoQuestReq questId reqIdx stat points gameModel =
+withPlayerPuttingNormalPointsIntoQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
+withPlayerPuttingNormalPointsIntoQuestReq questId reqIdx stat points gameModel =
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
-    , quests = Dict.update questId (Maybe.map (Quest.withPointsTowardRequirement points reqIdx)) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withNormalPointsTowardRequirement points reqIdx)) gameModel.quests
+    }
+
+
+withPlayerPuttingWildPointIntoQuestReq : ID -> Int -> GameModel -> GameModel
+withPlayerPuttingWildPointIntoQuestReq questId reqIdx gameModel =
+    { gameModel
+    | player = Player.withPointsChanged Stat.Wild (\oldPoints -> oldPoints - 1) gameModel.player
+    , quests = Dict.update questId (Maybe.map (Quest.withWildPointTowardRequirement reqIdx)) gameModel.quests
     }
 
 
@@ -227,30 +221,39 @@ withPlayerPuttingMaxPointsIntoQuestReq questId reqIdx stat gameModel =
     in
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
-    , quests = Dict.update questId (Maybe.map (Quest.withPointsTowardRequirement points reqIdx)) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withNormalPointsTowardRequirement points reqIdx)) gameModel.quests
     }
 
 
-withPlayerRemovingPointsFromQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
-withPlayerRemovingPointsFromQuestReq questId reqIdx stat points gameModel =
+withPlayerRemovingNormalPointsFromQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
+withPlayerRemovingNormalPointsFromQuestReq questId reqIdx stat points gameModel =
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
-    , quests = Dict.update questId (Maybe.map (Quest.withPointsRemovedFromRequirement points reqIdx)) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withNormalPointsRemovedFromRequirement points reqIdx)) gameModel.quests
     }
 
 
 withPlayerRemovingAllPiontsFromQuestReq : ID -> Int -> Stat -> GameModel -> GameModel
 withPlayerRemovingAllPiontsFromQuestReq questId reqIdx stat gameModel =
     let
-        points : Int
-        points =
+        normalPoints : Int
+        normalPoints =
             Dict.get questId gameModel.quests
-                |> Maybe.map (Quest.pointsAddedInCurrentCycle reqIdx)
+                |> Maybe.map (Quest.normalPointsAddedInCurrentCycle reqIdx)
+                |> Maybe.withDefault 0
+
+        wildPoints : Int
+        wildPoints =
+            Dict.get questId gameModel.quests
+                |> Maybe.map (Quest.wildPointsAddedInCurrentCycle reqIdx)
                 |> Maybe.withDefault 0
     in
     { gameModel
-    | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
-    , quests = Dict.update questId (Maybe.map (Quest.withPointsRemovedFromRequirement points reqIdx)) gameModel.quests
+    | player =
+        gameModel.player
+            |> Player.withPointsChanged stat (\oldPoints -> oldPoints + normalPoints)
+            |> Player.withPointsChanged Stat.Wild (\oldPoints -> oldPoints + wildPoints)
+    , quests = Dict.update questId (Maybe.map (Quest.withAllPointsRemovedFromRequirement reqIdx)) gameModel.quests
     }
 
 

@@ -14,24 +14,52 @@ type alias Quest =
     }
 
 
-withPointsTowardRequirement : Int -> Int -> Quest -> Quest
-withPointsTowardRequirement points reqIdx quest =
+withNormalPointsTowardRequirement : Int -> Int -> Quest -> Quest
+withNormalPointsTowardRequirement points reqIdx quest =
     { quest
-    | requirements = Array.update reqIdx (Requirement.withPointsAdded points) quest.requirements
+    | requirements = Array.update reqIdx (Requirement.withNormalPointsAdded points) quest.requirements
     }
 
 
-withPointsRemovedFromRequirement : Int -> Int -> Quest -> Quest
-withPointsRemovedFromRequirement points reqIdx quest =
+withNormalPointsRemovedFromRequirement : Int -> Int -> Quest -> Quest
+withNormalPointsRemovedFromRequirement points reqIdx quest =
     { quest
-    | requirements = Array.update reqIdx (Requirement.withPointsRemoved points) quest.requirements
+    | requirements = Array.update reqIdx (Requirement.withNormalPointsRemoved points) quest.requirements
     }
 
 
-pointsAddedInCurrentCycle : Int -> Quest -> Int
-pointsAddedInCurrentCycle reqIdx quest =
+withWildPointTowardRequirement : Int -> Quest -> Quest
+withWildPointTowardRequirement reqIdx quest =
+    { quest
+    | requirements = Array.update reqIdx Requirement.withWildPointAdded quest.requirements
+    }
+
+
+withWildPointRemovedFromRequirement : Int -> Quest -> Quest
+withWildPointRemovedFromRequirement reqIdx quest =
+    { quest
+    | requirements = Array.update reqIdx Requirement.withWildPointRemoved quest.requirements
+    }
+
+
+withAllPointsRemovedFromRequirement : Int -> Quest -> Quest
+withAllPointsRemovedFromRequirement reqIdx quest =
+    { quest
+    | requirements = Array.update reqIdx Requirement.withAllPointsRemoved quest.requirements
+    }
+
+
+normalPointsAddedInCurrentCycle : Int -> Quest -> Int
+normalPointsAddedInCurrentCycle reqIdx quest =
     Array.get reqIdx quest.requirements
-        |> Maybe.map Requirement.pointsAddedInCurrentCycle
+        |> Maybe.map Requirement.normalPointsAddedInCurrentCycle
+        |> Maybe.withDefault 0
+
+
+wildPointsAddedInCurrentCycle : Int -> Quest -> Int
+wildPointsAddedInCurrentCycle reqIdx quest =
+    Array.get reqIdx quest.requirements
+        |> Maybe.map Requirement.wildPointsAddedInCurrentCycle
         |> Maybe.withDefault 0
 
 
