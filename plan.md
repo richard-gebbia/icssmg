@@ -17,6 +17,10 @@
 - [X] Scrollable quest display
 - [X] Cycle number
 - [X] Rework wilds (player has wilds, additional buttons to spend wilds on quest requirements)
+- [X] Test many points for a requirement
+- [ ] Font
+- [ ] Background
+- [ ] Content!
 - [ ] Find minimal repro for a bug with Gren formatter
 
 # UI

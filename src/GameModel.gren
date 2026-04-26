@@ -51,7 +51,7 @@ init =
             |> Dict.set 2
                 { title = "Second Quest"
                 , requirements =
-                    [ QuestReq.init Stat.Green 4 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
+                    [ QuestReq.init Stat.Green 12 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
                     , QuestReq.init Stat.Pink 3 |> QuestReq.withNormalPointsAdded 2 |> QuestReq.nextCycleStartState
                     , QuestReq.init Stat.Purple 1 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
                     ]

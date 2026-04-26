@@ -65,6 +65,7 @@ button {
     font-family: monospace;
     cursor: pointer;
     transition: transform 0.2s;
+    white-space: nowrap;
 }
 
 button:hover {
@@ -182,6 +183,7 @@ hr {
 
 .pip-row {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
 }
 
