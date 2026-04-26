@@ -98,6 +98,10 @@ pointsNeededToComplete requirement =
 nextCycleStartState : Requirement -> Requirement
 nextCycleStartState requirement =
     { requirement
-    | pointsAddedPreviously = requirement.pointsAddedPreviously + requirement.normalPointsAddedInCurrentCycle_
+    | pointsAddedPreviously =
+        requirement.pointsAddedPreviously
+            + requirement.normalPointsAddedInCurrentCycle_
+            + requirement.wildPointsAddedInCurrentCycle_
     , normalPointsAddedInCurrentCycle_ = 0
+    , wildPointsAddedInCurrentCycle_ = 0
     }

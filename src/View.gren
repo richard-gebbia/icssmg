@@ -102,21 +102,21 @@ pipRow player questId reqIdx requirement =
         cantPutInMoreNormalPoints =
             Player.pointsForStat stat player <= 0 || isCompleted
 
-        normalPointsThisCycle : Int
-        normalPointsThisCycle =
+        normalPointsInReqThisCycle : Int
+        normalPointsInReqThisCycle =
             QuestReq.normalPointsAddedInCurrentCycle requirement
 
-        wildPointsThisCycle : Int
-        wildPointsThisCycle =
+        wildPointsInReqThisCycle : Int
+        wildPointsInReqThisCycle =
             QuestReq.wildPointsAddedInCurrentCycle requirement
 
-        hasNormalPointsThisCycle : Bool
-        hasNormalPointsThisCycle =
-            0 < normalPointsThisCycle
+        reqHasNormalPointsThisCycle : Bool
+        reqHasNormalPointsThisCycle =
+            0 < normalPointsInReqThisCycle
 
-        hasWildPointsThisCycle : Bool
-        hasWildPointsThisCycle =
-            0 < wildPointsThisCycle
+        reqHasWildPointsThisCycle : Bool
+        reqHasWildPointsThisCycle =
+            0 < wildPointsInReqThisCycle
 
         wildImg : Html msg
         wildImg =
@@ -153,29 +153,35 @@ pipRow player questId reqIdx requirement =
             [ Html.text "+1", wildImg ]
         , Html.button
             [ HtmlAttrs.type_ "button"
-            , HtmlAttrs.disabled (not hasNormalPointsThisCycle)
+            , HtmlAttrs.disabled (not reqHasNormalPointsThisCycle)
             , HtmlEvents.onClick (Msg.PlayerRemovesPointFromQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text "-1" ]
         , Html.button
             [ HtmlAttrs.type_ "button"
-            , HtmlAttrs.disabled (not hasNormalPointsThisCycle && not hasWildPointsThisCycle)
+            , HtmlAttrs.disabled (not reqHasWildPointsThisCycle)
+            , HtmlEvents.onClick (Msg.PlayerRemovesWildPointFromQuestReq { questId = questId, reqIdx = reqIdx })
+            ]
+            [ Html.text "-1", wildImg ]
+        , Html.button
+            [ HtmlAttrs.type_ "button"
+            , HtmlAttrs.disabled (not reqHasNormalPointsThisCycle && not reqHasWildPointsThisCycle)
             , HtmlEvents.onClick (Msg.PlayerRemovesAllPointsFromQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
             ]
-            (if not hasNormalPointsThisCycle && not hasWildPointsThisCycle then
+            (if not reqHasNormalPointsThisCycle && not reqHasWildPointsThisCycle then
                 [ Html.text "-All" ]
 
-             else if hasNormalPointsThisCycle && hasWildPointsThisCycle then
-                [ Html.text ("-All (" ++ String.fromInt normalPointsThisCycle ++ ", " ++ String.fromInt wildPointsThisCycle)
+             else if reqHasNormalPointsThisCycle && reqHasWildPointsThisCycle then
+                [ Html.text ("-All (" ++ String.fromInt normalPointsInReqThisCycle ++ ", " ++ String.fromInt wildPointsInReqThisCycle)
                 , wildImg
                 , Html.text ")"
                 ]
 
-             else if hasNormalPointsThisCycle then
-                [ Html.text ("-All (" ++ String.fromInt normalPointsThisCycle ++ ")") ]
+             else if reqHasNormalPointsThisCycle then
+                [ Html.text ("-All (" ++ String.fromInt normalPointsInReqThisCycle ++ ")") ]
 
              else
-                [ Html.text ("-All (" ++ String.fromInt wildPointsThisCycle), wildImg, Html.text ")" ]
+                [ Html.text ("-All (" ++ String.fromInt wildPointsInReqThisCycle), wildImg, Html.text ")" ]
             )
         , Html.div [ HtmlAttrs.class "pip-row-pips" ]
             (Array.map

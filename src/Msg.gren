@@ -9,6 +9,7 @@ type Msg
     | PlayerPutWildPointIntoQuestReq { questId : ID, reqIdx : Int }
     | PlayerPutMaxPointsIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerRemovesPointFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
+    | PlayerRemovesWildPointFromQuestReq { questId : ID, reqIdx : Int }
     | PlayerRemovesAllPointsFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerCommitsCurrentCycle
     | CommitCycleAnimationEnds

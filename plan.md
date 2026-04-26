@@ -16,7 +16,7 @@
 - [X] Actually have HP and max HP change effects do something
 - [X] Scrollable quest display
 - [X] Cycle number
-- [ ] Rework wilds (player has wilds, additional buttons to spend wilds on quest requirements)
+- [X] Rework wilds (player has wilds, additional buttons to spend wilds on quest requirements)
 - [ ] Find minimal repro for a bug with Gren formatter
 
 # UI

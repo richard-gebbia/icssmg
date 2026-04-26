@@ -233,6 +233,14 @@ withPlayerRemovingNormalPointsFromQuestReq questId reqIdx stat points gameModel 
     }
 
 
+withPlayerRemovingWildPointFromQuestReq : ID -> Int -> GameModel -> GameModel
+withPlayerRemovingWildPointFromQuestReq questId reqIdx gameModel =
+    { gameModel
+    | player = Player.withPointsChanged Stat.Wild (\oldPoints -> oldPoints + 1) gameModel.player
+    , quests = Dict.update questId (Maybe.map (Quest.withWildPointRemovedFromRequirement reqIdx)) gameModel.quests
+    }
+
+
 withPlayerRemovingAllPiontsFromQuestReq : ID -> Int -> Stat -> GameModel -> GameModel
 withPlayerRemovingAllPiontsFromQuestReq questId reqIdx stat gameModel =
     let

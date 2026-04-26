@@ -61,6 +61,11 @@ update msg model =
             , command = Cmd.none
             }
 
+        Msg.PlayerRemovesWildPointFromQuestReq { questId, reqIdx } ->
+            { model = { model | gameModel = GameModel.withPlayerRemovingWildPointFromQuestReq questId reqIdx model.gameModel }
+            , command = Cmd.none
+            }
+
         Msg.PlayerRemovesAllPointsFromQuestReq { questId, reqIdx, stat } ->
             { model = { model | gameModel = GameModel.withPlayerRemovingAllPiontsFromQuestReq questId reqIdx stat model.gameModel }
             , command = Cmd.none
