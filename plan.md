@@ -15,6 +15,7 @@
 - [ ] Commit Cycle
 - [ ] Actually have HP and max HP change effects do something
 - [ ] Distribute wilds phase
+- [ ] Find minimal repro for a bug with Gren formatter
 
 # UI
 Two panes, horizontally laid out:

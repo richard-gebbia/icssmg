@@ -13,53 +13,70 @@ import Quest.Requirement as QuestReq
 import Stat exposing (Stat)
 
 
-view : GameModel -> Html Msg
-view gameModel =
+view : GameModel -> Bool -> Html Msg
+view gameModel isCommittingCycle =
     Html.section [ HtmlAttrs.class "game" ]
-        [ viewCompletingQuests gameModel
-        , viewPlayerInfo gameModel
+        [ viewQuests gameModel isCommittingCycle
+        , viewPlayerInfo gameModel isCommittingCycle
         ]
 
 
-viewCompletingQuests : GameModel -> Html Msg
-viewCompletingQuests { player, quests } =
+viewQuests : GameModel -> Bool -> Html Msg
+viewQuests { player, quests } isCommittingCycle =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
         [ Html.h2 [] [ Html.text "Quests" ]
         , Html.section [ HtmlAttrs.class "quests-list" ]
-            (Array.indexedMap (viewQuest player) quests)
+            (Array.indexedMap (viewQuest player isCommittingCycle) quests)
         ]
 
 
-viewQuest : Player -> Int -> Quest -> Html Msg
-viewQuest player questIdx quest =
+viewQuest : Player -> Bool -> Int -> Quest -> Html Msg
+viewQuest player isCommittingCycle questIdx quest =
+    let
+        isCompleted : Bool
+        isCompleted =
+            Quest.isCompleted quest
+    in
     Html.div
-        [ HtmlAttrs.class "quest-container"
-        , HtmlAttrs.classList [ { class = "quest-completed", enabled = Quest.isCompleted quest } ]
+        [ HtmlAttrs.class "quest-grid-container"
+        , HtmlAttrs.classList [ { class = "completed-committed", enabled = isCompleted && isCommittingCycle } ]
         ]
-        [ Html.div [ HtmlAttrs.class "quest-title" ]
-            [ Html.text quest.title ]
-        , Html.div [ HtmlAttrs.class "pips" ]
-            (Array.indexedMap (pipRow player questIdx) quest.requirements)
-        , Html.hr [] []
-        , Html.div [ HtmlAttrs.class "rewards-section" ]
-            [ Html.b [] [ Html.text "On completion:" ]
-            , Html.ul []
-                (Array.map viewEffectListItem quest.completionEffects)
+        [ Html.div
+            [ HtmlAttrs.class "quest-container"
+            , HtmlAttrs.classList [ { class = "quest-completed", enabled = isCompleted } ]
             ]
-        , Html.hr [] []
-        , Html.div []
-            [ Html.text
-                (when quest.duration is
-                    Duration.Temp { cyclesLeft } ->
-                        if cyclesLeft <= 1 then
-                            "Goes away next cycle"
+            [ Html.div [ HtmlAttrs.class "quest-title" ]
+                [ Html.text
+                    (if isCompleted && isCommittingCycle then
+                        "QUEST COMPLETED!"
 
-                        else
-                            "Goes away in " ++ String.fromInt cyclesLeft ++ " cycles"
+                     else
+                        quest.title
+                    )
+                ]
+            , Html.div [ HtmlAttrs.class "pips" ]
+                (Array.indexedMap (pipRow player questIdx) quest.requirements)
+            , Html.hr [] []
+            , Html.div [ HtmlAttrs.class "rewards-section" ]
+                [ Html.b [] [ Html.text "On completion:" ]
+                , Html.ul []
+                    (Array.map viewEffectListItem quest.completionEffects)
+                ]
+            , Html.hr [] []
+            , Html.div []
+                [ Html.text
+                    (when quest.duration is
+                        Duration.Temp { cyclesLeft } ->
+                            if cyclesLeft <= 1 then
+                                "Goes away next cycle"
 
-                    Duration.Permanent ->
-                        "Never goes away"
-                )
+                            else
+                                "Goes away in " ++ String.fromInt cyclesLeft ++ " cycles"
+
+                        Duration.Permanent ->
+                            "Never goes away"
+                    )
+                ]
             ]
         ]
 
@@ -268,8 +285,8 @@ viewCycleStartEffect effect =
             [ Html.text ("Take " ++ String.fromInt amount ++ " damage. (Lose this much HP.)") ]
 
 
-viewPlayerInfo : GameModel -> Html Msg
-viewPlayerInfo gameModel =
+viewPlayerInfo : GameModel -> Bool -> Html Msg
+viewPlayerInfo gameModel isCommittingCycle =
     let
         bonusHpNextCycle : Int
         bonusHpNextCycle =
@@ -342,8 +359,17 @@ viewPlayerInfo gameModel =
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.class "button complete-button"
+            , HtmlAttrs.disabled isCommittingCycle
+            , HtmlEvents.onClick Msg.PlayerCommitsCurrentCycle
             ]
-            [ Html.text "Commit Cycle" ]
+            [ Html.text
+                (if isCommittingCycle then
+                    "Committing Cycle..."
+
+                 else
+                    "Commit Cycle"
+                )
+            ]
         ]
 
 

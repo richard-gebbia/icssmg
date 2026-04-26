@@ -123,6 +123,16 @@ hr {
     gap: 1rem;
 }
 
+.quest-grid-container {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 1s;
+}
+
+.quest-grid-container.completed-committed {
+    grid-template-rows: 0fr;
+}
+
 .quest-container {
     display: flex;
     flex-direction: column;
@@ -132,7 +142,8 @@ hr {
     border-radius: 6px;
     align-items: start;
     background-color: var(--purple-5);
-    transition: color 0.3s, background-color 0.3s;
+    transition: padding 1s;
+    overflow: hidden;
 }
 
 .quest-completed {
@@ -143,6 +154,15 @@ hr {
 .quest-title {
     font-weight: 700;
     font-size: 20pt;
+}
+
+.completed-committed .quest-container {
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.completed-committed .quest-title {
+    color: var(--yellow-1);
 }
 
 .requirements-list {

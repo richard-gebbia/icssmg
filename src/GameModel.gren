@@ -48,16 +48,16 @@ init =
           }
         , { title = "Second Quest"
           , requirements =
-                [ QuestReq.init Stat.Green 4 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
-                , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.cycleStartState
-                , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.cycleStartState
+                [ QuestReq.init Stat.Green 4 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
+                , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.nextCycleStartState
+                , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
                 ]
           , duration = Duration.Temp { cyclesLeft = 3 }
           , completionEffects =
-            [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2, duration = Duration.Temp { cyclesLeft = 2 } }
-            , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-            , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
-            ]
+                [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2, duration = Duration.Temp { cyclesLeft = 2 } }
+                , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
+                ]
           }
         ]
     , effects =
@@ -71,12 +71,12 @@ init =
     }
 
 
-cycleStartState : GameModel -> GameModel
-cycleStartState { player, quests, effects } =
+nextCycleStartState : GameModel -> GameModel
+nextCycleStartState { player, quests, effects } =
     let
         playerAtCycleStart : Player
         playerAtCycleStart =
-            Player.cycleStartState player
+            Player.nextCycleStartState player
 
         wilds : Int
         wilds =
@@ -164,8 +164,6 @@ cycleStartState { player, quests, effects } =
                 )
                 playerAtCycleStart
                 effects
-
-        -- TODO: change HP and max HP
 
         newQuests : Array Quest
         newQuests =
@@ -365,6 +363,13 @@ bonusHpNextCycle gameModel =
                 CycleStartEffect.PlayerHeals { amount } ->
                     count + amount
 
+                CycleStartEffect.PlayerMaxHPChanges { amount } ->
+                    if 0 < amount then
+                        count + amount
+
+                    else
+                        count
+
                 CycleStartEffect.PlayerTakesDamage { amount } ->
                     count - amount
 
@@ -406,14 +411,14 @@ bonusLevelsNextCycle gameModel =
 
 
 tentativeEffects : GameModel -> Array CycleStartEffect
-tentativeEffects {quests, effects} =
-    effects ++
-        (Array.mapAndFlatten
+tentativeEffects { quests, effects } =
+    effects
+        ++ Array.mapAndFlatten
             (\quest ->
                 if not (Quest.isCompleted quest) then
                     []
+
                 else
                     quest.completionEffects
             )
             quests
-        )

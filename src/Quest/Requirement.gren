@@ -1,4 +1,4 @@
-module Quest.Requirement exposing (Requirement, cycleStartState, init, isCompleted, pointsAddedInCurrentCycle, pointsNeededToComplete, pointsTowardCompletion, stat, total, withPointsAdded, withPointsRemoved)
+module Quest.Requirement exposing (Requirement, init, isCompleted, nextCycleStartState, pointsAddedInCurrentCycle, pointsNeededToComplete, pointsTowardCompletion, stat, total, withPointsAdded, withPointsRemoved)
 
 import Stat exposing (Stat)
 
@@ -64,8 +64,8 @@ pointsNeededToComplete requirement =
     requirement.amount - pointsTowardCompletion requirement
 
 
-cycleStartState : Requirement -> Requirement
-cycleStartState requirement =
+nextCycleStartState : Requirement -> Requirement
+nextCycleStartState requirement =
     { requirement
     | pointsAddedPreviously = requirement.pointsAddedPreviously + requirement.pointsAddedInCurrentCycle_
     , pointsAddedInCurrentCycle_ = 0

@@ -8,3 +8,5 @@ type Msg
     | PlayerPutsMaxPointsIntoQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
     | PlayerRemovesPointFromQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
     | PlayerRemovesAllPointsFromQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
+    | PlayerCommitsCurrentCycle
+    | CommitCycleAnimationEnds

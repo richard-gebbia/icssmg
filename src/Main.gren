@@ -5,6 +5,8 @@ import GameModel exposing (GameModel)
 import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
 import Msg exposing (Msg)
+import Process
+import Task
 import View
 
 
@@ -19,41 +21,57 @@ main =
 
 
 type alias Model =
-    { gameModel : GameModel }
+    { gameModel : GameModel
+    , isCommittingCycle : Bool
+    }
 
 
 init : {} -> { model : Model, command : Cmd Msg }
 init _ =
-    { model = { gameModel = GameModel.init }
+    { model = { gameModel = GameModel.init, isCommittingCycle = False }
     , command = Cmd.none
     }
 
 
 view : Model -> Html Msg
-view { gameModel } =
-    Html.main_ [] [ View.view gameModel ]
+view { gameModel, isCommittingCycle } =
+    Html.main_ [] [ View.view gameModel isCommittingCycle ]
 
 
 update : Msg -> Model -> { model : Model, command : Cmd Msg }
 update msg model =
     when msg is
         Msg.PlayerPutPointIntoQuestReq { questIdx, reqIdx, stat } ->
-            { model = { gameModel = GameModel.withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat 1 model.gameModel }
+            { model = { model | gameModel = GameModel.withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat 1 model.gameModel }
             , command = Cmd.none
             }
 
         Msg.PlayerPutsMaxPointsIntoQuestReq { questIdx, reqIdx, stat } ->
-            { model = { gameModel = GameModel.withPlayerPuttingMaxPointsIntoQuestReq questIdx reqIdx stat model.gameModel }
+            { model = { model | gameModel = GameModel.withPlayerPuttingMaxPointsIntoQuestReq questIdx reqIdx stat model.gameModel }
             , command = Cmd.none
             }
 
         Msg.PlayerRemovesPointFromQuestReq { questIdx, reqIdx, stat } ->
-            { model = { gameModel = GameModel.withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat 1 model.gameModel }
+            { model = { model | gameModel = GameModel.withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat 1 model.gameModel }
             , command = Cmd.none
             }
 
         Msg.PlayerRemovesAllPointsFromQuestReq { questIdx, reqIdx, stat } ->
-            { model = { gameModel = GameModel.withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat model.gameModel }
+            { model = { model | gameModel = GameModel.withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat model.gameModel }
+            , command = Cmd.none
+            }
+
+        Msg.PlayerCommitsCurrentCycle ->
+            { model = { model | isCommittingCycle = True }
+            , command = Process.sleep 1000 |> Task.perform (\_ -> Msg.CommitCycleAnimationEnds)
+            }
+
+        Msg.CommitCycleAnimationEnds ->
+            { model =
+                { model
+                | isCommittingCycle = False
+                , gameModel = GameModel.nextCycleStartState model.gameModel
+                }
             , command = Cmd.none
             }
 

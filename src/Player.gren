@@ -23,8 +23,8 @@ type alias Player =
     }
 
 
-cycleStartState : Player -> Player
-cycleStartState player =
+nextCycleStartState : Player -> Player
+nextCycleStartState player =
     { player
     | pink = 0
     , yellow = 0
