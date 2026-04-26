@@ -20,7 +20,7 @@
 - [X] Test many points for a requirement
 - [X] Grid layout for quest
 - [X] Font
-- [ ] Background
+- [X] Background
 - [ ] Content!
 - [ ] Find minimal repro for a bug with Gren formatter
 
