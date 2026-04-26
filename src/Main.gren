@@ -41,23 +41,23 @@ view { gameModel, isCommittingCycle } =
 update : Msg -> Model -> { model : Model, command : Cmd Msg }
 update msg model =
     when msg is
-        Msg.PlayerPutPointIntoQuestReq { questIdx, reqIdx, stat } ->
-            { model = { model | gameModel = GameModel.withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat 1 model.gameModel }
+        Msg.PlayerPutPointIntoQuestReq { questId, reqIdx, stat } ->
+            { model = { model | gameModel = GameModel.withPlayerPuttingPointsIntoQuestReq questId reqIdx stat 1 model.gameModel }
             , command = Cmd.none
             }
 
-        Msg.PlayerPutsMaxPointsIntoQuestReq { questIdx, reqIdx, stat } ->
-            { model = { model | gameModel = GameModel.withPlayerPuttingMaxPointsIntoQuestReq questIdx reqIdx stat model.gameModel }
+        Msg.PlayerPutsMaxPointsIntoQuestReq { questId, reqIdx, stat } ->
+            { model = { model | gameModel = GameModel.withPlayerPuttingMaxPointsIntoQuestReq questId reqIdx stat model.gameModel }
             , command = Cmd.none
             }
 
-        Msg.PlayerRemovesPointFromQuestReq { questIdx, reqIdx, stat } ->
-            { model = { model | gameModel = GameModel.withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat 1 model.gameModel }
+        Msg.PlayerRemovesPointFromQuestReq { questId, reqIdx, stat } ->
+            { model = { model | gameModel = GameModel.withPlayerRemovingPointsFromQuestReq questId reqIdx stat 1 model.gameModel }
             , command = Cmd.none
             }
 
-        Msg.PlayerRemovesAllPointsFromQuestReq { questIdx, reqIdx, stat } ->
-            { model = { model | gameModel = GameModel.withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat model.gameModel }
+        Msg.PlayerRemovesAllPointsFromQuestReq { questId, reqIdx, stat } ->
+            { model = { model | gameModel = GameModel.withPlayerRemovingAllPiontsFromQuestReq questId reqIdx stat model.gameModel }
             , command = Cmd.none
             }
 

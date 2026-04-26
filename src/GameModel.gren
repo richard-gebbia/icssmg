@@ -1,7 +1,9 @@
 module GameModel exposing (..)
 
 import CycleStartEffect exposing (CycleStartEffect)
+import Dict exposing (Dict)
 import Duration exposing (Duration)
+import Ids exposing (ID)
 import Player exposing (Player)
 import Quest exposing (Quest)
 import Quest.Requirement as QuestReq
@@ -10,7 +12,7 @@ import Stat exposing (Stat)
 
 type alias GameModel =
     { player : Player
-    , quests : Array Quest
+    , quests : Dict ID Quest
     , phase : Phase
     , effects : Array CycleStartEffect
     }
@@ -41,25 +43,27 @@ init =
         , whiteTotalForCycle = 0
         }
     , quests =
-        [ { title = "First Quest"
-          , requirements = [ QuestReq.init Stat.Blue 1 ]
-          , duration = Duration.Permanent
-          , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
-          }
-        , { title = "Second Quest"
-          , requirements =
-                [ QuestReq.init Stat.Green 4 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
-                , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.nextCycleStartState
-                , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
-                ]
-          , duration = Duration.Temp { cyclesLeft = 3 }
-          , completionEffects =
-                [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2, duration = Duration.Temp { cyclesLeft = 2 } }
-                , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-                , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
-                ]
-          }
-        ]
+        Dict.empty
+            |> Dict.set 1
+                { title = "First Quest"
+                , requirements = [ QuestReq.init Stat.Blue 1 ]
+                , duration = Duration.Permanent
+                , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
+                }
+            |> Dict.set 2
+                { title = "Second Quest"
+                , requirements =
+                    [ QuestReq.init Stat.Green 4 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
+                    , QuestReq.init Stat.Pink 3 |> QuestReq.withPointsAdded 2 |> QuestReq.nextCycleStartState
+                    , QuestReq.init Stat.Purple 1 |> QuestReq.withPointsAdded 1 |> QuestReq.nextCycleStartState
+                    ]
+                , duration = Duration.Temp { cyclesLeft = 3 }
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2, duration = Duration.Temp { cyclesLeft = 2 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
+                    ]
+                }
     , effects =
         [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
         , CycleStartEffect.PlayerHeals { amount = 2 }
@@ -165,20 +169,24 @@ nextCycleStartState { player, quests, effects } =
                 playerAtCycleStart
                 effects
 
-        newQuests : Array Quest
+        newQuests : Dict ID Quest
         newQuests =
-            Array.mapAndKeepJust
-                (\quest ->
-                    when quest.duration is
-                        Duration.Temp { cyclesLeft } ->
-                            if cyclesLeft <= 0 then
-                                Nothing
+            Dict.mapAndKeepJust
+                (\_ quest ->
+                    if Quest.isCompleted quest then
+                        Nothing
 
-                            else
-                                Just { quest | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } }
+                    else
+                        when quest.duration is
+                            Duration.Temp { cyclesLeft } ->
+                                if cyclesLeft <= 0 then
+                                    Nothing
 
-                        Duration.Permanent ->
-                            Just quest
+                                else
+                                    Just { quest | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } }
+
+                            Duration.Permanent ->
+                                Just quest
                 )
                 quests
     in
@@ -196,12 +204,12 @@ doesPlayerMeetQuestRequirements player quest =
         quest.requirements
 
 
-withQuestCompleted : Int -> GameModel -> GameModel
-withQuestCompleted questIdx gameModel =
+withQuestCompleted : ID -> GameModel -> GameModel
+withQuestCompleted questId gameModel =
     let
         quest : Maybe Quest
         quest =
-            Array.get questIdx gameModel.quests
+            Dict.get questId gameModel.quests
 
         newPlayer : Player
         newPlayer =
@@ -222,24 +230,24 @@ withQuestCompleted questIdx gameModel =
     in
     { gameModel
     | player = newPlayer
-    , quests = Array.indexedKeepIf (\idx _ -> not (idx == questIdx)) gameModel.quests
+    , quests = Dict.remove questId gameModel.quests
     }
 
 
-withPlayerPuttingPointsIntoQuestReq : Int -> Int -> Stat -> Int -> GameModel -> GameModel
-withPlayerPuttingPointsIntoQuestReq questIdx reqIdx stat points gameModel =
+withPlayerPuttingPointsIntoQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
+withPlayerPuttingPointsIntoQuestReq questId reqIdx stat points gameModel =
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
-    , quests = Array.update questIdx (Quest.withPointsTowardRequirement points reqIdx) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withPointsTowardRequirement points reqIdx)) gameModel.quests
     }
 
 
-withPlayerPuttingMaxPointsIntoQuestReq : Int -> Int -> Stat -> GameModel -> GameModel
-withPlayerPuttingMaxPointsIntoQuestReq questIdx reqIdx stat gameModel =
+withPlayerPuttingMaxPointsIntoQuestReq : ID -> Int -> Stat -> GameModel -> GameModel
+withPlayerPuttingMaxPointsIntoQuestReq questId reqIdx stat gameModel =
     let
         pointsNeeded : Int
         pointsNeeded =
-            Array.get questIdx gameModel.quests
+            Dict.get questId gameModel.quests
                 |> Maybe.map (Quest.pointsNeededToCompleteReq reqIdx)
                 |> Maybe.withDefault 0
 
@@ -253,30 +261,30 @@ withPlayerPuttingMaxPointsIntoQuestReq questIdx reqIdx stat gameModel =
     in
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints - points) gameModel.player
-    , quests = Array.update questIdx (Quest.withPointsTowardRequirement points reqIdx) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withPointsTowardRequirement points reqIdx)) gameModel.quests
     }
 
 
-withPlayerRemovingPointsFromQuestReq : Int -> Int -> Stat -> Int -> GameModel -> GameModel
-withPlayerRemovingPointsFromQuestReq questIdx reqIdx stat points gameModel =
+withPlayerRemovingPointsFromQuestReq : ID -> Int -> Stat -> Int -> GameModel -> GameModel
+withPlayerRemovingPointsFromQuestReq questId reqIdx stat points gameModel =
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
-    , quests = Array.update questIdx (Quest.withPointsRemovedFromRequirement points reqIdx) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withPointsRemovedFromRequirement points reqIdx)) gameModel.quests
     }
 
 
-withPlayerRemovingAllPiontsFromQuestReq : Int -> Int -> Stat -> GameModel -> GameModel
-withPlayerRemovingAllPiontsFromQuestReq questIdx reqIdx stat gameModel =
+withPlayerRemovingAllPiontsFromQuestReq : ID -> Int -> Stat -> GameModel -> GameModel
+withPlayerRemovingAllPiontsFromQuestReq questId reqIdx stat gameModel =
     let
         points : Int
         points =
-            Array.get questIdx gameModel.quests
+            Dict.get questId gameModel.quests
                 |> Maybe.map (Quest.pointsAddedInCurrentCycle reqIdx)
                 |> Maybe.withDefault 0
     in
     { gameModel
     | player = Player.withPointsChanged stat (\oldPoints -> oldPoints + points) gameModel.player
-    , quests = Array.update questIdx (Quest.withPointsRemovedFromRequirement points reqIdx) gameModel.quests
+    , quests = Dict.update questId (Maybe.map (Quest.withPointsRemovedFromRequirement points reqIdx)) gameModel.quests
     }
 
 
@@ -421,4 +429,4 @@ tentativeEffects { quests, effects } =
                 else
                     quest.completionEffects
             )
-            quests
+            (Dict.values quests)

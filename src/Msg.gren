@@ -1,12 +1,13 @@
 module Msg exposing (..)
 
+import Ids exposing (ID)
 import Stat exposing (Stat)
 
 
 type Msg
-    = PlayerPutPointIntoQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
-    | PlayerPutsMaxPointsIntoQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
-    | PlayerRemovesPointFromQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
-    | PlayerRemovesAllPointsFromQuestReq { questIdx : Int, reqIdx : Int, stat : Stat }
+    = PlayerPutPointIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
+    | PlayerPutsMaxPointsIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
+    | PlayerRemovesPointFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
+    | PlayerRemovesAllPointsFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerCommitsCurrentCycle
     | CommitCycleAnimationEnds

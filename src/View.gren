@@ -1,11 +1,14 @@
 module View exposing (..)
 
 import CycleStartEffect exposing (CycleStartEffect)
+import Dict
 import Duration
 import GameModel exposing (GameModel)
 import Html exposing (Html)
 import Html.Attributes as HtmlAttrs
 import Html.Events as HtmlEvents
+import Html.Keyed as HtmlKeyed
+import Ids exposing (ID)
 import Msg exposing (Msg)
 import Player exposing (Player)
 import Quest exposing (Quest)
@@ -25,64 +28,67 @@ viewQuests : GameModel -> Bool -> Html Msg
 viewQuests { player, quests } isCommittingCycle =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
         [ Html.h2 [] [ Html.text "Quests" ]
-        , Html.section [ HtmlAttrs.class "quests-list" ]
-            (Array.indexedMap (viewQuest player isCommittingCycle) quests)
+        , HtmlKeyed.ul [ HtmlAttrs.class "quests-list" ]
+            (Dict.map (viewQuest player isCommittingCycle) quests |> Dict.values)
         ]
 
 
-viewQuest : Player -> Bool -> Int -> Quest -> Html Msg
-viewQuest player isCommittingCycle questIdx quest =
+viewQuest : Player -> Bool -> ID -> Quest -> { key : String, node : Html Msg }
+viewQuest player isCommittingCycle questId quest =
     let
         isCompleted : Bool
         isCompleted =
             Quest.isCompleted quest
     in
-    Html.div
-        [ HtmlAttrs.class "quest-grid-container"
-        , HtmlAttrs.classList [ { class = "completed-committed", enabled = isCompleted && isCommittingCycle } ]
-        ]
-        [ Html.div
-            [ HtmlAttrs.class "quest-container"
-            , HtmlAttrs.classList [ { class = "quest-completed", enabled = isCompleted } ]
+    { key = String.fromInt questId
+    , node =
+        Html.li
+            [ HtmlAttrs.class "quest-grid-container"
+            , HtmlAttrs.classList [ { class = "completed-committed", enabled = isCompleted && isCommittingCycle } ]
             ]
-            [ Html.div [ HtmlAttrs.class "quest-title" ]
-                [ Html.text
-                    (if isCompleted && isCommittingCycle then
-                        "QUEST COMPLETED!"
-
-                     else
-                        quest.title
-                    )
+            [ Html.div
+                [ HtmlAttrs.class "quest-container"
+                , HtmlAttrs.classList [ { class = "quest-completed", enabled = isCompleted } ]
                 ]
-            , Html.div [ HtmlAttrs.class "pips" ]
-                (Array.indexedMap (pipRow player questIdx) quest.requirements)
-            , Html.hr [] []
-            , Html.div [ HtmlAttrs.class "rewards-section" ]
-                [ Html.b [] [ Html.text "On completion:" ]
-                , Html.ul []
-                    (Array.map viewEffectListItem quest.completionEffects)
-                ]
-            , Html.hr [] []
-            , Html.div []
-                [ Html.text
-                    (when quest.duration is
-                        Duration.Temp { cyclesLeft } ->
-                            if cyclesLeft <= 1 then
-                                "Goes away next cycle"
+                [ Html.div [ HtmlAttrs.class "quest-title" ]
+                    [ Html.text
+                        (if isCompleted && isCommittingCycle then
+                            "QUEST COMPLETED!"
 
-                            else
-                                "Goes away in " ++ String.fromInt cyclesLeft ++ " cycles"
+                         else
+                            quest.title
+                        )
+                    ]
+                , Html.div [ HtmlAttrs.class "pips" ]
+                    (Array.indexedMap (pipRow player questId) quest.requirements)
+                , Html.hr [] []
+                , Html.div [ HtmlAttrs.class "rewards-section" ]
+                    [ Html.b [] [ Html.text "On completion:" ]
+                    , Html.ul []
+                        (Array.map viewEffectListItem quest.completionEffects)
+                    ]
+                , Html.hr [] []
+                , Html.div []
+                    [ Html.text
+                        (when quest.duration is
+                            Duration.Temp { cyclesLeft } ->
+                                if cyclesLeft <= 1 then
+                                    "Goes away next cycle"
 
-                        Duration.Permanent ->
-                            "Never goes away"
-                    )
+                                else
+                                    "Goes away in " ++ String.fromInt cyclesLeft ++ " cycles"
+
+                            Duration.Permanent ->
+                                "Never goes away"
+                        )
+                    ]
                 ]
             ]
-        ]
+    }
 
 
 pipRow : Player -> Int -> Int -> QuestReq.Requirement -> Html Msg
-pipRow player questIdx reqIdx requirement =
+pipRow player questId reqIdx requirement =
     let
         stat : Stat
         stat =
@@ -106,25 +112,25 @@ pipRow player questIdx reqIdx requirement =
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled playerHasNoPoints
-            , HtmlEvents.onClick (Msg.PlayerPutPointIntoQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
+            , HtmlEvents.onClick (Msg.PlayerPutPointIntoQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text "+1" ]
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled playerHasNoPoints
-            , HtmlEvents.onClick (Msg.PlayerPutsMaxPointsIntoQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
+            , HtmlEvents.onClick (Msg.PlayerPutsMaxPointsIntoQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text "+Max" ]
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
-            , HtmlEvents.onClick (Msg.PlayerRemovesPointFromQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
+            , HtmlEvents.onClick (Msg.PlayerRemovesPointFromQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text "-1" ]
         , Html.button
             [ HtmlAttrs.type_ "button"
             , HtmlAttrs.disabled (QuestReq.pointsAddedInCurrentCycle requirement == 0)
-            , HtmlEvents.onClick (Msg.PlayerRemovesAllPointsFromQuestReq { questIdx = questIdx, reqIdx = reqIdx, stat = stat })
+            , HtmlEvents.onClick (Msg.PlayerRemovesAllPointsFromQuestReq { questId = questId, reqIdx = reqIdx, stat = stat })
             ]
             [ Html.text ("-All (" ++ String.fromInt (QuestReq.pointsAddedInCurrentCycle requirement) ++ ")") ]
         , Html.div [ HtmlAttrs.class "pip-row-pips" ]

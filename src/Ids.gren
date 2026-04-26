@@ -1,0 +1,16 @@
+module Ids exposing (..)
+
+
+
+
+type alias ID =
+    Int
+
+
+type alias Ids =
+    Int
+
+
+next : Ids -> { id : ID, nextIds : Ids }
+next source =
+    { id = source, nextIds = source + 1 }

@@ -121,12 +121,14 @@ hr {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    padding-left: 0px;
 }
 
 .quest-grid-container {
     display: grid;
     grid-template-rows: 1fr;
     transition: grid-template-rows 1s;
+    list-style: none;
 }
 
 .quest-grid-container.completed-committed {
