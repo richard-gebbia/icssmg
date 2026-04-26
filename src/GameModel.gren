@@ -12,6 +12,7 @@ import Stat exposing (Stat)
 
 type alias GameModel =
     { player : Player
+    , cycle : Int
     , quests : Dict ID Quest
     , phase : Phase
     , effects : Array CycleStartEffect
@@ -42,6 +43,7 @@ init =
         , purpleTotalForCycle = 0
         , whiteTotalForCycle = 0
         }
+    , cycle = 1
     , quests =
         Dict.empty
             |> Dict.set 1
@@ -82,7 +84,7 @@ init =
 
 
 nextCycleStartState : GameModel -> GameModel
-nextCycleStartState { player, quests, effects } =
+nextCycleStartState { player, cycle, quests, effects } =
     let
         playerAtCycleStart : Player
         playerAtCycleStart =
@@ -208,6 +210,7 @@ nextCycleStartState { player, quests, effects } =
     in
     { player = playerWithNewPointsAndLevel
     , quests = newQuests
+    , cycle = cycle + 1
     , phase = DistributingWilds { wildsLeft = wilds, totalWilds = wilds }
     , effects = newEffects
     }

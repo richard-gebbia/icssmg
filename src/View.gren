@@ -309,6 +309,10 @@ viewPlayerInfo gameModel isCommittingCycle =
     Html.section [ HtmlAttrs.class "player-info-panel" ]
         [ Html.div [ HtmlAttrs.class "player-info-panel-top-section" ]
             [ Html.div [ HtmlAttrs.class "player-info-line" ]
+                [ Html.b [] [ Html.text "Cycle: " ]
+                , Html.text (String.fromInt gameModel.cycle)
+                ]
+            , Html.div [ HtmlAttrs.class "player-info-line" ]
                 [ Html.b [] [ Html.text "HP: " ]
                 , Html.text (String.fromInt gameModel.player.hp ++ "/" ++ String.fromInt gameModel.player.maxHP)
                 , if not (bonusHpNextCycle == 0) || not (bonusMaxHpNextCycle == 0) then
@@ -373,7 +377,7 @@ viewPlayerInfo gameModel isCommittingCycle =
                     "Committing Cycle..."
 
                  else
-                    "Commit Cycle"
+                    "Next Cycle"
                 )
             ]
         ]
