@@ -12,7 +12,6 @@ type alias Quest =
     , duration : Duration
     , completionEffects : Array CycleStartEffect
     , expirationEffects : Array CycleStartEffect
-    , generatorName : String
     , isRecurring : Bool
     }
 
@@ -76,3 +75,31 @@ pointsNeededToCompleteReq reqIdx quest =
 isCompleted : Quest -> Bool
 isCompleted quest =
     Array.all Requirement.isCompleted quest.requirements
+
+
+nextCycleStartState : Quest -> { quest : Quest, isStillThere : Bool }
+nextCycleStartState quest =
+    let
+        newQuest : Quest
+        newQuest =
+            { quest
+            | requirements = Array.map Requirement.nextCycleStartState quest.requirements
+            , duration =
+                when quest.duration is
+                    Duration.Temp { cyclesLeft } ->
+                        Duration.Temp { cyclesLeft = cyclesLeft - 1 }
+
+                    Duration.Permanent ->
+                        Duration.Permanent
+            }
+    in
+    if isCompleted quest then
+        { quest = quest, isStillThere = False }
+
+    else
+        when newQuest.duration is
+            Duration.Temp { cyclesLeft } ->
+                { quest = newQuest, isStillThere = 0 < cyclesLeft }
+
+            Duration.Permanent ->
+                { quest = newQuest, isStillThere = True }

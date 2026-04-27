@@ -58,8 +58,8 @@ Two panes, horizontally laid out:
         X Button to end cycle depending
 
 # Content
-- Player starts at level 1 with a blue
-- First quest is always 1 blue to level up and never goes away
+- Player starts at level 1 with a white
+- First quest is always 1 white to level up and never goes away
 - Content
     - quests scale with level
     - split of bespoke and procedurally generated quests

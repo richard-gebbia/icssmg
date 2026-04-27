@@ -34,12 +34,14 @@ nextCycleStartState player =
     , blue = 0
     , purple = 0
     , white = 0
+    , wild = 0
     , pinkTotalForCycle = 0
     , yellowTotalForCycle = 0
     , greenTotalForCycle = 0
     , blueTotalForCycle = 0
     , purpleTotalForCycle = 0
     , whiteTotalForCycle = 0
+    , wildTotalForCycle = 0
     }
 
 
@@ -119,7 +121,7 @@ withPointsChanged stat statChange player =
 
 
 {-| Updates HP. This can make the player HP go above max HP for optimization purposes.
-    Call adjustedForMaxHP after all HP effects are evaluated to factor in Max HP.
+    Call afterEffectsApplied after all HP effects are evaluated to factor in Max HP.
 -}
 withHpChanged : Int -> Player -> Player
 withHpChanged amount player =
@@ -129,7 +131,7 @@ withHpChanged amount player =
 
 
 {-| Updates Max HP. This can make the player HP go above max HP for optimization purposes.
-    Call adjustedForMaxHP after all HP effects are evaluated to factor in Max HP.
+    Call afterEffectsApplied after all HP effects are evaluated to factor in Max HP.
 -}
 withMaxHpChanged : Int -> Player -> Player
 withMaxHpChanged amount player =
@@ -138,8 +140,16 @@ withMaxHpChanged amount player =
     }
 
 
-adjustedForMaxHP : Player -> Player
-adjustedForMaxHP player =
+afterEffectsApplied : Player -> Player
+afterEffectsApplied player =
     { player
     | hp = min player.hp player.maxHP
+    , pinkTotalForCycle = player.pink
+    , yellowTotalForCycle = player.yellow
+    , greenTotalForCycle = player.green
+    , blueTotalForCycle = player.blue
+    , purpleTotalForCycle = player.purple
+    , whiteTotalForCycle = player.white
+    , wild = player.wild + player.level
+    , wildTotalForCycle = player.wild + player.level
     }

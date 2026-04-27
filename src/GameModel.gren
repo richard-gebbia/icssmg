@@ -4,6 +4,7 @@ import CycleStartEffect exposing (CycleStartEffect)
 import Dict exposing (Dict)
 import Duration exposing (Duration)
 import Ids exposing (ID, Ids)
+import Math
 import Msg exposing (Msg)
 import Player exposing (Player)
 import Quest exposing (Quest)
@@ -21,6 +22,7 @@ type alias GameModel =
     , effects : Array CycleStartEffect
     , primaryQuestGenerator : QuestGenerator
     , questGeneratorsByName : Dict String QuestGenerator
+    , generateQuestCounter : Int
     }
 
 
@@ -30,21 +32,21 @@ init =
         { player =
             { hp = 10
             , maxHP = 10
-            , level = 0
-            , pink = 3
+            , level = 1
+            , pink = 0
             , yellow = 0
-            , green = 3
-            , blue = 1
+            , green = 0
+            , blue = 0
             , purple = 0
-            , white = 0
-            , wild = 2
+            , white = 1
+            , wild = 1
             , pinkTotalForCycle = 0
             , yellowTotalForCycle = 0
-            , greenTotalForCycle = 2
-            , blueTotalForCycle = 1
+            , greenTotalForCycle = 0
+            , blueTotalForCycle = 0
             , purpleTotalForCycle = 0
-            , whiteTotalForCycle = 0
-            , wildTotalForCycle = 2
+            , whiteTotalForCycle = 1
+            , wildTotalForCycle = 1
             }
         , cycle = 1
         , ids = Ids.init
@@ -52,60 +54,21 @@ init =
         , quests =
             Dict.empty
                 |> Dict.set 1
-                    { title = "First Quest"
-                    , requirements = [ QuestReq.init Stat.Blue 1 ]
+                    { title = "Level Up I"
+                    , requirements = [ QuestReq.init Stat.White 1 ]
                     , duration = Duration.Permanent
                     , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
                     , expirationEffects = []
-                    , generatorName = "BarBaz"
                     , isRecurring = False
                     }
-                |> Dict.set 2
-                    { title = "Second Quest"
-                    , requirements =
-                        [ QuestReq.init Stat.Green 12 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
-                        , QuestReq.init Stat.Pink 3 |> QuestReq.withNormalPointsAdded 2 |> QuestReq.nextCycleStartState
-                        , QuestReq.init Stat.Purple 1 |> QuestReq.withNormalPointsAdded 1 |> QuestReq.nextCycleStartState
-                        ]
-                    , duration = Duration.Temp { cyclesLeft = 3 }
-                    , completionEffects =
-                        [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2, duration = Duration.Temp { cyclesLeft = 2 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
-                        ]
-                    , expirationEffects = []
-                    , generatorName = "FooBar"
-                    , isRecurring = False
-                    }
-                |> Dict.set 3
-                    { title = "Third Quest"
-                    , requirements = [ QuestReq.init Stat.Blue 1 ]
-                    , duration = Duration.Temp { cyclesLeft = 1 }
-                    , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
-                    , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
-                    , generatorName = "FooBaz"
-                    , isRecurring = False
-                    }
-                |> Dict.set 4
-                    { title = "Venture into the Unknown " ++ romanNumeral 1
-                    , requirements = [ QuestReq.init Stat.Pink 1 ]
-                    , duration = Duration.Temp { cyclesLeft = 7 }
-                    , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
-                    , expirationEffects = []
-                    , generatorName = "Level Up Spawner"
-                    , isRecurring = False
-                    }
-        , effects =
-            [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
-            , CycleStartEffect.PlayerMaxHPChanges { amount = -1 }
-            , CycleStartEffect.PlayerLevelsUp
-            , CycleStartEffect.PlayerLevelsUp
-            ]
-        , primaryQuestGenerator = levelUp
+        , effects = []
+        , primaryQuestGenerator = primaryQuestGenerator
         , questGeneratorsByName =
             Dict.empty
                 |> Dict.set "Level Up" levelUp
                 |> Dict.set "Level Up Spawner" levelUpSpawner
+                |> Dict.set "Easy Procedural" easyProcedural
+        , generateQuestCounter = 0
         }
     , command = Random.generate Msg.GeneratedInitialSeed Random.independentSeed
     }
@@ -193,7 +156,7 @@ nextCycleStartState gameModel =
                 )
                 playerAtCycleStart
                 oldEffects
-                |> Player.adjustedForMaxHP
+                |> Player.afterEffectsApplied
 
         spawnedQuestsAndRandomSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
         spawnedQuestsAndRandomSeedAndIds =
@@ -207,7 +170,7 @@ nextCycleStartState gameModel =
                                         let
                                             questAndSeed : { quest : Quest, randomSeed : Random.Seed }
                                             questAndSeed =
-                                                generateQuest questGen generatorId gameModel questsAndSeedAndIds.randomSeed
+                                                generateQuest questGen gameModel questsAndSeedAndIds.randomSeed
 
                                             idAndIds : { id : ID, nextIds : Ids }
                                             idAndIds =
@@ -225,37 +188,62 @@ nextCycleStartState gameModel =
                 )
                 { quests = Dict.empty, randomSeed = gameModel.randomSeed, ids = gameModel.ids }
                 oldEffects
-                |> Debug.log "hullo?"
+
+        newQuestForCycleAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
+        newQuestForCycleAndIds =
+            let
+                randomSeed : Random.Seed
+                randomSeed =
+                    spawnedQuestsAndRandomSeedAndIds.randomSeed
+
+                ids : Ids
+                ids =
+                    spawnedQuestsAndRandomSeedAndIds.ids
+            in
+            if gameModel.generateQuestCounter == 0 then
+                let
+                    questAndSeed =
+                        generateQuest gameModel.primaryQuestGenerator gameModel randomSeed
+
+                    idAndIds : { id : ID, nextIds : Ids }
+                    idAndIds =
+                        Ids.next ids
+                in
+                { quests = Dict.empty |> Dict.set idAndIds.id questAndSeed.quest
+                , randomSeed = questAndSeed.randomSeed
+                , ids = idAndIds.nextIds
+                }
+
+            else
+                { quests = Dict.empty, randomSeed = randomSeed, ids = ids }
 
         newQuests : Dict ID Quest
         newQuests =
             gameModel.quests
                 |> Dict.mapAndKeepJust
                     (\_ quest ->
-                        if Quest.isCompleted quest then
-                            Nothing
+                        let
+                            newQuestAndIsStillThere : { quest : Quest, isStillThere : Bool }
+                            newQuestAndIsStillThere =
+                                Quest.nextCycleStartState quest
+                        in
+                        if newQuestAndIsStillThere.isStillThere then
+                            Just newQuestAndIsStillThere.quest
 
                         else
-                            when quest.duration is
-                                Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 1 then
-                                        Nothing
-
-                                    else
-                                        Just { quest | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } }
-
-                                Duration.Permanent ->
-                                    Just quest
+                            Nothing
                     )
                 |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
+                |> Dict.union newQuestForCycleAndIds.quests
     in
     { gameModel
     | player = playerWithNewPointsAndLevel
     , quests = newQuests
     , cycle = gameModel.cycle + 1
     , effects = newEffects
-    , randomSeed = spawnedQuestsAndRandomSeedAndIds.randomSeed
-    , ids = spawnedQuestsAndRandomSeedAndIds.ids
+    , randomSeed = newQuestForCycleAndIds.randomSeed
+    , ids = newQuestForCycleAndIds.ids
+    , generateQuestCounter = Math.modBy 3 (gameModel.generateQuestCounter + 1)
     }
 
 
@@ -456,27 +444,46 @@ tentativeEffects { quests, effects } =
 
 
 type QuestGenerator
-    = QuestGen (String -> GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed })
+    = QuestGen (GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed })
 
 
-generateQuest : QuestGenerator -> String -> GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed }
-generateQuest questGen name game seed =
+generateQuest : QuestGenerator -> GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed }
+generateQuest questGen game seed =
     when questGen is
         QuestGen g ->
-            g name game seed
+            g game seed
+
+
+primaryQuestGenerator : QuestGenerator
+primaryQuestGenerator =
+    QuestGen
+        (\game seed ->
+            let
+                options : Random.Generator QuestGenerator
+                options =
+                    Random.weighted
+                        { weight = 90, value = easyProcedural }
+                        [ { weight = 9, value = levelUpSpawner }
+                        , { weight = 1, value = levelUp }
+                        ]
+
+                questGenAndSeed =
+                    Random.step options seed
+            in
+            generateQuest questGenAndSeed.value game questGenAndSeed.seed
+        )
 
 
 levelUp : QuestGenerator
 levelUp =
     QuestGen
-        (\name game seed ->
+        (\game seed ->
             { quest =
                 { title = "Level Up " ++ romanNumeral game.player.level
                 , requirements = [ QuestReq.init Stat.White (2 ^ game.player.level) ]
                 , duration = Duration.Permanent
                 , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
                 , expirationEffects = []
-                , generatorName = name
                 , isRecurring = False
                 }
             , randomSeed = seed
@@ -487,7 +494,7 @@ levelUp =
 levelUpSpawner : QuestGenerator
 levelUpSpawner =
     QuestGen
-        (\name game seed ->
+        (\game seed ->
             { quest =
                 { title = "Venture into the Unknown " ++ romanNumeral game.player.level
                 , requirements =
@@ -499,11 +506,57 @@ levelUpSpawner =
                     ]
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
-                , generatorName = name
                 , expirationEffects = []
                 , isRecurring = False
                 }
             , randomSeed = seed
+            }
+        )
+
+
+easyProcedural : QuestGenerator
+easyProcedural =
+    QuestGen
+        (\game seed ->
+            let
+                titleAndSeed =
+                    Random.step randomSciFiQuestNames seed
+
+                points =
+                    playerNextCycleStatsDesc game
+
+                toRandomWeight : { stat : Stat, amount : Int } -> { weight : Float, value : Stat }
+                toRandomWeight { stat, amount } =
+                    { weight = toFloat amount, value = stat }
+
+                weightedStatGenerator : Random.Generator Stat
+                weightedStatGenerator =
+                    points
+                        |> Array.popFirst
+                        |> Maybe.map (\{ first, rest } -> Random.weighted (toRandomWeight first) (Array.map toRandomWeight rest))
+                        |> Maybe.withDefault randomStat
+
+                statAndSeed =
+                    Random.step weightedStatGenerator titleAndSeed.seed
+
+                rewardAndSeed =
+                    Random.step randomStat statAndSeed.seed
+            in
+            { quest =
+                { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                , requirements = [ QuestReq.init statAndSeed.value (game.player.level * 2) ]
+                , duration = Duration.Temp { cyclesLeft = 3 }
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = rewardAndSeed.value
+                        , amount = game.player.level * 2
+                        , duration = Duration.Temp { cyclesLeft = 1 }
+                        }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = rewardAndSeed.seed
             }
         )
 
@@ -556,3 +609,96 @@ romanNumeral x =
                 soFar
     in
     aux x ""
+
+
+{-| Generated by ChatGPT -}
+randomSciFiQuestNames : Random.Generator String
+randomSciFiQuestNames =
+    Random.uniform
+        "Echoes of a Silent Nebula"
+        [ "The Last Signal from Orion Station"
+        , "Protocol: Starfall"
+        , "Ghosts in the Vacuum"
+        , "The Synthetic Rebellion"
+        , "Fracture at Quantum Gate"
+        , "A Memory That Isn't Yours"
+        , "The Smuggler's Paradox"
+        , "Ashes of a Dying Sun"
+        , "The AI Who Dreamed of War"
+        , "Broken Orbit Syndicate"
+        , "Cryostasis Catastrophe"
+        , "The Void Whispers Back"
+        , "Neon Blood Contract"
+        , "Siege of the Hollow Asteroid"
+        , "The Disappearing Colony"
+        , "Data Heist on Titan-6"
+        , "The Black Star Conspiracy"
+        , "Starlight for Sale"
+        , "Rogue Planet Rising"
+        , "The Clone Directive"
+        , "Beneath Europa's Ice"
+        , "The Quantum Thief"
+        , "Lights Out on Vega Prime"
+        , "The Engineer's Last Transmission"
+        , "Gravity Is Optional"
+        , "The Galactic Bounty Circuit"
+        , "Shadows of the Dyson Ring"
+        , "The Parasite Code"
+        , "Escape from Sector Null"
+        , "The Starship That Shouldn't Exist"
+        , "Pulse of the Singularity"
+        , "A Deal with the Machine Mind"
+        , "The Missing Terraformers"
+        , "Red Dust Redemption"
+        , "The Infinite Cargo Loop"
+        , "The Captain's Secret Log"
+        , "Collapse of the Outer Rim"
+        , "The Alien Artifact Auction"
+        , "The Orbiting Graveyard"
+        , "Firewall Breach: Omega"
+        , "The Sleeper Fleet Awakens"
+        , "The Signal Beneath Reality"
+        , "Stolen Suns"
+        , "The Warp Rift Incident"
+        , "Children of the Comet"
+        , "The Synthetic Messiah"
+        , "Countdown to Planetfall"
+        , "The Forbidden Jump Coordinates"
+        , "The Last Human Frequency"
+        ]
+
+
+playerNextCycleStatsDesc : GameModel -> Array { stat : Stat, amount : Int }
+playerNextCycleStatsDesc gameModel =
+    let
+        pink =
+            pointsForStatNextCycle Stat.Pink gameModel
+
+        yellow =
+            pointsForStatNextCycle Stat.Yellow gameModel
+
+        green =
+            pointsForStatNextCycle Stat.Green gameModel
+
+        blue =
+            pointsForStatNextCycle Stat.Blue gameModel
+
+        purple =
+            pointsForStatNextCycle Stat.Purple gameModel
+
+        white =
+            pointsForStatNextCycle Stat.White gameModel
+    in
+    [ { stat = Stat.Pink, amount = pink }
+    , { stat = Stat.Yellow, amount = yellow }
+    , { stat = Stat.Green, amount = green }
+    , { stat = Stat.Blue, amount = blue }
+    , { stat = Stat.Purple, amount = purple }
+    , { stat = Stat.White, amount = white }
+    ]
+        |> Array.sortBy (\{ stat, amount } -> -amount)
+
+
+randomStat : Random.Generator Stat
+randomStat =
+    Random.uniform Stat.Pink [ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple, Stat.White ]
