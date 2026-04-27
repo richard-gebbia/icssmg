@@ -54,12 +54,11 @@ init =
         , quests =
             Dict.empty
                 |> Dict.set 1
-                    { title = "Level Up I"
+                    { title = "Initial Venture"
                     , requirements = [ QuestReq.init Stat.White 1 ]
                     , duration = Duration.Permanent
                     , completionEffects =
-                        [ CycleStartEffect.PlayerLevelsUp
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
+                        [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
@@ -230,6 +229,8 @@ nextCycleStartState gameModel =
         newQuests : Dict ID Quest
         newQuests =
             gameModel.quests
+                |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
+                |> Dict.union newQuestForCycleAndIds.quests
                 |> Dict.mapAndKeepJust
                     (\_ quest ->
                         let
@@ -243,8 +244,6 @@ nextCycleStartState gameModel =
                         else
                             Nothing
                     )
-                |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
-                |> Dict.union newQuestForCycleAndIds.quests
 
         finalNewQuestsAndSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
         finalNewQuestsAndSeedAndIds =
@@ -496,8 +495,9 @@ primaryQuestGenerator =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 79, value = easyProcedural }
-                        [ { weight = 9, value = levelUpSpawner }
+                        { weight = 50, value = easyProcedural }
+                        [ { weight = 29, value = mediumProcedural }
+                        , { weight = 9, value = levelUpSpawner }
                         , { weight = 1, value = levelUp }
                         , { weight = 5, value = fuckAround }
                         , { weight = 1, value = pinkLevelUp }
@@ -840,6 +840,84 @@ easyProcedural =
                 , isRecurring = False
                 }
             , randomSeed = rewardAndSeed.seed
+            }
+        )
+
+
+mediumProcedural : QuestGenerator
+mediumProcedural =
+    QuestGen
+        (\game seed _extraData ->
+            let
+                titleAndSeed =
+                    Random.step randomSciFiQuestNames seed
+
+                points =
+                    playerNextCycleStatsDesc game
+
+                toRandomWeight : { stat : Stat, amount : Int } -> { weight : Float, value : Stat }
+                toRandomWeight { stat, amount } =
+                    { weight = toFloat (max amount 1), value = stat }
+
+                weightedStatGenerator : Random.Generator Stat
+                weightedStatGenerator =
+                    points
+                        |> Array.popFirst
+                        |> Maybe.map (\{ first, rest } -> Random.weighted (toRandomWeight first) (Array.map toRandomWeight rest))
+                        |> Maybe.withDefault randomStat
+
+                statAndSeed1 =
+                    Random.step weightedStatGenerator titleAndSeed.seed
+
+                statAndSeed2 =
+                    Random.step weightedStatGenerator statAndSeed1.seed
+
+                requirements =
+                    if statAndSeed1.value == statAndSeed2.value then
+                        [ QuestReq.init statAndSeed1.value (game.player.level * 4) ]
+
+                    else
+                        [ QuestReq.init statAndSeed1.value (game.player.level * 2)
+                        , QuestReq.init statAndSeed2.value (game.player.level * 2)
+                        ]
+
+                rewardAndSeed1 =
+                    Random.step randomStat statAndSeed2.seed
+
+                rewardAndSeed2 =
+                    Random.step randomStat rewardAndSeed1.seed
+
+                rewards =
+                    if rewardAndSeed1.value == rewardAndSeed2.value then
+                        [ CycleStartEffect.PlayerGetsPoints
+                            { stat = rewardAndSeed1.value
+                            , amount = game.player.level * 6
+                            , duration = Duration.Temp { cyclesLeft = 3 }
+                            }
+                        ]
+
+                    else
+                        [ CycleStartEffect.PlayerGetsPoints
+                            { stat = rewardAndSeed1.value
+                            , amount = game.player.level * 3
+                            , duration = Duration.Temp { cyclesLeft = 3 }
+                            }
+                        , CycleStartEffect.PlayerGetsPoints
+                            { stat = rewardAndSeed2.value
+                            , amount = game.player.level * 3
+                            , duration = Duration.Temp { cyclesLeft = 3 }
+                            }
+                        ]
+            in
+            { quest =
+                { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                , requirements = requirements
+                , duration = Duration.Temp { cyclesLeft = 5 }
+                , completionEffects = rewards
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = rewardAndSeed2.seed
             }
         )
 
