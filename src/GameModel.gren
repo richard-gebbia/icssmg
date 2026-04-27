@@ -75,6 +75,8 @@ init =
                 |> Dict.set "Level Up" levelUp
                 |> Dict.set "Level Up Spawner" levelUpSpawner
                 |> Dict.set "Easy Procedural" easyProcedural
+                |> Dict.set "Fuck Around" fuckAround
+                |> Dict.set "Find Out" findOut
         , generateQuestCounter = 0
         }
     , command = Random.generate Msg.GeneratedInitialSeed Random.independentSeed
@@ -170,14 +172,14 @@ nextCycleStartState gameModel =
             Array.foldl
                 (\effect questsAndSeedAndIds ->
                     when effect is
-                        CycleStartEffect.SpawnQuest { generatorId } ->
+                        CycleStartEffect.SpawnQuest { generatorId, extraData } ->
                             Dict.get generatorId gameModel.questGeneratorsByName
                                 |> Maybe.map
                                     (\questGen ->
                                         let
                                             questAndSeed : { quest : Quest, randomSeed : Random.Seed }
                                             questAndSeed =
-                                                generateQuest questGen gameModel questsAndSeedAndIds.randomSeed
+                                                generateQuest questGen gameModel questsAndSeedAndIds.randomSeed extraData
 
                                             idAndIds : { id : ID, nextIds : Ids }
                                             idAndIds =
@@ -200,7 +202,7 @@ nextCycleStartState gameModel =
         randomNewQuestAndSeedAndIds randomSeed ids =
             let
                 questAndSeed =
-                    generateQuest gameModel.primaryQuestGenerator gameModel randomSeed
+                    generateQuest gameModel.primaryQuestGenerator gameModel randomSeed ""
 
                 idAndIds : { id : ID, nextIds : Ids }
                 idAndIds =
@@ -479,40 +481,41 @@ tentativeEffects { quests, effects } =
 
 
 type QuestGenerator
-    = QuestGen (GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed })
+    = QuestGen (GameModel -> Random.Seed -> String -> { quest : Quest, randomSeed : Random.Seed })
 
 
-generateQuest : QuestGenerator -> GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed }
-generateQuest questGen game seed =
+generateQuest : QuestGenerator -> GameModel -> Random.Seed -> String -> { quest : Quest, randomSeed : Random.Seed }
+generateQuest questGen game seed extraData =
     when questGen is
         QuestGen g ->
-            g game seed
+            g game seed extraData
 
 
 primaryQuestGenerator : QuestGenerator
 primaryQuestGenerator =
     QuestGen
-        (\game seed ->
+        (\game seed _extraData ->
             let
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 90, value = easyProcedural }
+                        { weight = 85, value = easyProcedural }
                         [ { weight = 9, value = levelUpSpawner }
                         , { weight = 1, value = levelUp }
+                        , { weight = 5, value = fuckAround }
                         ]
 
                 questGenAndSeed =
                     Random.step options seed
             in
-            generateQuest questGenAndSeed.value game questGenAndSeed.seed
+            generateQuest questGenAndSeed.value game questGenAndSeed.seed ""
         )
 
 
 levelUp : QuestGenerator
 levelUp =
     QuestGen
-        (\game seed ->
+        (\game seed _extraData ->
             { quest =
                 { title = "Level Up " ++ romanNumeral game.player.level
                 , requirements = [ QuestReq.init Stat.White (2 ^ game.player.level) ]
@@ -529,7 +532,7 @@ levelUp =
 levelUpSpawner : QuestGenerator
 levelUpSpawner =
     QuestGen
-        (\game seed ->
+        (\game seed _extraData ->
             { quest =
                 { title = "Venture into the Unknown " ++ romanNumeral game.player.level
                 , requirements =
@@ -540,8 +543,112 @@ levelUpSpawner =
                     , QuestReq.init Stat.Purple game.player.level
                     ]
                 , duration = Duration.Temp { cyclesLeft = 7 }
-                , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
+                , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up", extraData = "" } ]
                 , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+fuckAround : QuestGenerator
+fuckAround =
+    QuestGen
+        (\game seed _extraData ->
+            let
+                statAndSeed1 =
+                    Random.step randomStat seed
+
+                statAndSeed2 =
+                    Random.step randomStat statAndSeed1.seed
+
+                statAndSeed3 =
+                    Random.step randomStat statAndSeed2.seed
+
+                requirements =
+                    [ QuestReq.init statAndSeed1.value 1
+                    , QuestReq.init statAndSeed2.value 1
+                    , QuestReq.init statAndSeed3.value 1
+                    ]
+
+                extraDataEncoder : Stat -> String
+                extraDataEncoder stat =
+                    when stat is
+                        Stat.Pink ->
+                            "pink"
+
+                        Stat.Yellow ->
+                            "yellow"
+
+                        Stat.Green ->
+                            "green"
+
+                        Stat.Blue ->
+                            "blue"
+
+                        Stat.Purple ->
+                            "purple"
+
+                        _ ->
+                            "nothing"
+            in
+            { quest =
+                { title = "Nagging Curiosity " ++ romanNumeral game.player.level
+                , requirements = requirements
+                , duration = Duration.Temp { cyclesLeft = 4 }
+                , completionEffects =
+                    [ CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = extraDataEncoder statAndSeed1.value }
+                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = extraDataEncoder statAndSeed2.value }
+                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = extraDataEncoder statAndSeed3.value }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = statAndSeed3.seed
+            }
+        )
+
+
+findOut : QuestGenerator
+findOut =
+    QuestGen
+        (\game seed extraData ->
+            let
+                stat : Stat
+                stat =
+                    when extraData is
+                        "pink" ->
+                            Stat.Pink
+
+                        "yellow" ->
+                            Stat.Yellow
+
+                        "green" ->
+                            Stat.Green
+
+                        "blue" ->
+                            Stat.Blue
+
+                        "purple" ->
+                            Stat.Purple
+
+                        _ ->
+                            Stat.White
+            in
+            { quest =
+                { title = "Attack of the Bullshit Planet " ++ romanNumeral game.player.level
+                , requirements = [ QuestReq.init stat (game.player.level * 3) ]
+                , duration = Duration.Temp { cyclesLeft = 4 }
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    ]
+                , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
                 , isRecurring = False
                 }
             , randomSeed = seed
@@ -552,7 +659,7 @@ levelUpSpawner =
 easyProcedural : QuestGenerator
 easyProcedural =
     QuestGen
-        (\game seed ->
+        (\game seed _extraData ->
             let
                 titleAndSeed =
                     Random.step randomSciFiQuestNames seed
