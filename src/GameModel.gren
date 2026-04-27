@@ -495,12 +495,14 @@ primaryQuestGenerator =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 45, value = easyProcedural }
-                        [ { weight = 25, value = mediumProcedural }
-                        , { weight = 12, value = hardProcedural }
+                        { weight = 40, value = easyProcedural }
+                        [ { weight = 20, value = mediumProcedural }
+                        , { weight = 10, value = hardProcedural }
+                        , { weight = 10, value = easyWithDamage }
+                        , { weight = 6, value = mediumWithHealing }
                         , { weight = 4, value = levelUpSpawner }
                         , { weight = 1, value = levelUp }
-                        , { weight = 7, value = fuckAround }
+                        , { weight = 4, value = fuckAround }
                         , { weight = 1, value = pinkLevelUp }
                         , { weight = 1, value = yellowLevelUp }
                         , { weight = 1, value = greenLevelUp }
@@ -562,19 +564,20 @@ fuckAround =
         (\game seed _extraData ->
             let
                 statAndSeed1 =
-                    Random.step randomStat seed
+                    Random.step (randomStat [] []) seed
 
                 statAndSeed2 =
-                    Random.step randomStat statAndSeed1.seed
+                    Random.step (randomStat [] []) statAndSeed1.seed
 
                 statAndSeed3 =
-                    Random.step randomStat statAndSeed2.seed
+                    Random.step (randomStat [] []) statAndSeed2.seed
 
                 requirements =
                     [ QuestReq.init statAndSeed1.value 1
                     , QuestReq.init statAndSeed2.value 1
                     , QuestReq.init statAndSeed3.value 1
                     ]
+                        |> collapseRequirements
 
                 extraDataEncoder : Stat -> String
                 extraDataEncoder stat =
@@ -818,13 +821,13 @@ easyProcedural =
                     points
                         |> Array.popFirst
                         |> Maybe.map (\{ first, rest } -> Random.weighted (toRandomWeight first) (Array.map toRandomWeight rest))
-                        |> Maybe.withDefault randomStat
+                        |> Maybe.withDefault (randomStat [] [])
 
                 statAndSeed =
                     Random.step weightedStatGenerator titleAndSeed.seed
 
                 rewardAndSeed =
-                    Random.step randomStat statAndSeed.seed
+                    Random.step (randomStat [] [ statAndSeed.value ]) statAndSeed.seed
             in
             { quest =
                 { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
@@ -865,7 +868,7 @@ mediumProcedural =
                     points
                         |> Array.popFirst
                         |> Maybe.map (\{ first, rest } -> Random.weighted (toRandomWeight first) (Array.map toRandomWeight rest))
-                        |> Maybe.withDefault randomStat
+                        |> Maybe.withDefault (randomStat [] [])
 
                 statAndSeed1 =
                     Random.step weightedStatGenerator titleAndSeed.seed
@@ -880,10 +883,10 @@ mediumProcedural =
                         ]
 
                 rewardAndSeed1 =
-                    Random.step randomStat statAndSeed2.seed
+                    Random.step (randomStat [] [ statAndSeed1.value, statAndSeed2.value ]) statAndSeed2.seed
 
                 rewardAndSeed2 =
-                    Random.step randomStat rewardAndSeed1.seed
+                    Random.step (randomStat [] [ statAndSeed1.value, statAndSeed2.value ]) rewardAndSeed1.seed
 
                 rewards =
                     collapsePointEffects
@@ -925,7 +928,7 @@ hardProcedural =
                     points
                         |> Array.popFirst
                         |> Maybe.map (\{ first, rest } -> Random.weighted (toRandomWeight first) (Array.map toRandomWeight rest))
-                        |> Maybe.withDefault randomStat
+                        |> Maybe.withDefault (randomStat [] [])
 
                 statAndSeed1 =
                     Random.step weightedStatGenerator titleAndSeed.seed
@@ -944,13 +947,13 @@ hardProcedural =
                         ]
 
                 rewardAndSeed1 =
-                    Random.step randomStat statAndSeed2.seed
+                    Random.step (randomStat [ Stat.White ] []) statAndSeed2.seed
 
                 rewardAndSeed2 =
-                    Random.step randomStat rewardAndSeed1.seed
+                    Random.step (randomStat [ Stat.White ] []) rewardAndSeed1.seed
 
                 rewardAndSeed3 =
-                    Random.step randomStat rewardAndSeed2.seed
+                    Random.step (randomStat [ Stat.White ] []) rewardAndSeed2.seed
 
                 rewards =
                     collapsePointEffects
@@ -963,12 +966,54 @@ hardProcedural =
             { quest =
                 { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
                 , requirements = requirements
-                , duration = Duration.Temp { cyclesLeft = 8 }
+                , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = rewards
                 , expirationEffects = []
                 , isRecurring = False
                 }
             , randomSeed = rewardAndSeed3.seed
+            }
+        )
+
+
+easyWithDamage : QuestGenerator
+easyWithDamage =
+    QuestGen
+        (\game seed extraData ->
+            let
+                questAndSeed =
+                    generateQuest easyProcedural game seed extraData
+
+                quest =
+                    questAndSeed.quest
+            in
+            { quest =
+                { quest
+                | title = "Fire Ants But They're Aliens " ++ romanNumeral game.player.level
+                , expirationEffects = Array.pushLast (CycleStartEffect.PlayerTakesDamage { amount = 1 }) quest.expirationEffects
+                }
+            , randomSeed = questAndSeed.randomSeed
+            }
+        )
+
+
+mediumWithHealing : QuestGenerator
+mediumWithHealing =
+    QuestGen
+        (\game seed extraData ->
+            let
+                questAndSeed =
+                    generateQuest mediumProcedural game seed extraData
+
+                quest =
+                    questAndSeed.quest
+            in
+            { quest =
+                { quest
+                | title = "Holo-Cantina Setup/Teardown " ++ romanNumeral game.player.level
+                , completionEffects = Array.pushLast (CycleStartEffect.PlayerHeals { amount = 2 }) quest.completionEffects
+                }
+            , randomSeed = questAndSeed.randomSeed
             }
         )
 
@@ -1107,9 +1152,13 @@ playerNextCycleStatsDesc gameModel =
         |> Array.sortBy (\{ stat, amount } -> -amount)
 
 
-randomStat : Random.Generator Stat
-randomStat =
-    Random.uniform Stat.Pink [ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
+randomStat : Array Stat -> Array Stat -> Random.Generator Stat
+randomStat with without =
+    Random.uniform Stat.Pink
+        ([ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
+            |> Array.prepend with
+            |> Array.keepIf (\stat -> not (Array.member stat without))
+        )
 
 
 collapseRequirements : Array QuestReq.Requirement -> Array QuestReq.Requirement
