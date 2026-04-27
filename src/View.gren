@@ -316,8 +316,8 @@ viewCycleStartEffect effect =
         CycleStartEffect.PlayerTakesDamage { amount } ->
             [ Html.text ("Take " ++ String.fromInt amount ++ " damage. (Lose this much HP.)") ]
 
-        CycleStartEffect.ThisShouldNeverDoAnythingButDontDelete ->
-            [ Html.text "NEVER" ]
+        CycleStartEffect.SpawnQuest _ ->
+            [ Html.text "Get a new quest!" ]
 
 
 viewPlayerInfo : GameModel -> Bool -> Html Msg

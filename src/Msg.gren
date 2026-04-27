@@ -1,11 +1,13 @@
 module Msg exposing (..)
 
 import Ids exposing (ID)
+import Random
 import Stat exposing (Stat)
 
 
 type Msg
-    = PlayerPutPointIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
+    = GeneratedInitialSeed Random.Seed
+    | PlayerPutPointIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerPutWildPointIntoQuestReq { questId : ID, reqIdx : Int }
     | PlayerPutMaxPointsIntoQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerRemovesPointFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }

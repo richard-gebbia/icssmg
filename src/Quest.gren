@@ -11,6 +11,8 @@ type alias Quest =
     , requirements : Array Requirement
     , duration : Duration
     , completionEffects : Array CycleStartEffect
+    , generatorName : String
+    , isRecurring : Bool
     }
 
 

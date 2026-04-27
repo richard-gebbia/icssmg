@@ -28,8 +28,18 @@ type alias Model =
 
 init : {} -> { model : Model, command : Cmd Msg }
 init _ =
-    { model = { gameModel = GameModel.init, isCommittingCycle = False }
-    , command = Cmd.none
+    let
+        initialGameModelAndCommand =
+            GameModel.init
+
+        game =
+            initialGameModelAndCommand.game
+
+        command =
+            initialGameModelAndCommand.command
+    in
+    { model = { gameModel = game, isCommittingCycle = False }
+    , command = command
     }
 
 
@@ -41,6 +51,11 @@ view { gameModel, isCommittingCycle } =
 update : Msg -> Model -> { model : Model, command : Cmd Msg }
 update msg model =
     when msg is
+        Msg.GeneratedInitialSeed seed ->
+            { model = { model | gameModel = GameModel.withInitialRandomSeed seed model.gameModel }
+            , command = Cmd.none
+            }
+
         Msg.PlayerPutPointIntoQuestReq { questId, reqIdx, stat } ->
             { model = { model | gameModel = GameModel.withPlayerPuttingNormalPointsIntoQuestReq questId reqIdx stat 1 model.gameModel }
             , command = Cmd.none

@@ -11,6 +11,11 @@ type alias Ids =
     Int
 
 
+init : Ids
+init =
+    0
+
+
 next : Ids -> { id : ID, nextIds : Ids }
 next source =
     { id = source, nextIds = source + 1 }

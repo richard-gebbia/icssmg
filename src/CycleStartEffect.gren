@@ -10,4 +10,4 @@ type CycleStartEffect
     | PlayerHeals { amount : Int }
     | PlayerMaxHPChanges { amount : Int }
     | PlayerTakesDamage { amount : Int }
-    | ThisShouldNeverDoAnythingButDontDelete
+    | SpawnQuest { generatorId : String }
