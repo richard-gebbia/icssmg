@@ -31,7 +31,7 @@ init =
             { hp = 10
             , maxHP = 10
             , level = 0
-            , pink = 1
+            , pink = 3
             , yellow = 0
             , green = 3
             , blue = 1
@@ -83,6 +83,14 @@ init =
                     , generatorName = "FooBaz"
                     , isRecurring = False
                     }
+                |> Dict.set 4
+                    { title = "Venture into the Unknown " ++ romanNumeral 1
+                    , requirements = [ QuestReq.init Stat.Pink 1 ]
+                    , duration = Duration.Temp { cyclesLeft = 7 }
+                    , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
+                    , generatorName = "Level Up Spawner"
+                    , isRecurring = False
+                    }
         , effects =
             [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
             , CycleStartEffect.PlayerHeals { amount = 2 }
@@ -94,6 +102,7 @@ init =
         , questGeneratorsByName =
             Dict.empty
                 |> Dict.set "Level Up" levelUp
+                |> Dict.set "Level Up Spawner" levelUpSpawner
         }
     , command = Random.generate Msg.GeneratedInitialSeed Random.independentSeed
     }
@@ -112,6 +121,10 @@ nextCycleStartState gameModel =
         playerAtCycleStart : Player
         playerAtCycleStart =
             Player.nextCycleStartState gameModel.player
+
+        oldEffects : Array CycleStartEffect
+        oldEffects =
+            tentativeEffects gameModel
 
         newEffects : Array CycleStartEffect
         newEffects =
@@ -150,7 +163,7 @@ nextCycleStartState gameModel =
                         CycleStartEffect.SpawnQuest _ ->
                             Nothing
                 )
-                gameModel.effects
+                oldEffects
 
         playerWithNewPointsAndLevel : Player
         playerWithNewPointsAndLevel =
@@ -176,35 +189,70 @@ nextCycleStartState gameModel =
                             playerIter
                 )
                 playerAtCycleStart
-                gameModel.effects
+                oldEffects
                 |> Player.adjustedForMaxHP
+
+        spawnedQuestsAndRandomSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
+        spawnedQuestsAndRandomSeedAndIds =
+            Array.foldl
+                (\effect questsAndSeedAndIds ->
+                    when effect is
+                        CycleStartEffect.SpawnQuest { generatorId } ->
+                            Dict.get generatorId gameModel.questGeneratorsByName
+                                |> Maybe.map
+                                    (\questGen ->
+                                        let
+                                            questAndSeed : { quest : Quest, randomSeed : Random.Seed }
+                                            questAndSeed =
+                                                generateQuest questGen generatorId gameModel questsAndSeedAndIds.randomSeed
+
+                                            idAndIds : { id : ID, nextIds : Ids }
+                                            idAndIds =
+                                                Ids.next questsAndSeedAndIds.ids
+                                        in
+                                        { quests = Dict.set idAndIds.id questAndSeed.quest questsAndSeedAndIds.quests
+                                        , randomSeed = questAndSeed.randomSeed
+                                        , ids = idAndIds.nextIds
+                                        }
+                                    )
+                                |> Maybe.withDefault questsAndSeedAndIds
+
+                        _ ->
+                            questsAndSeedAndIds
+                )
+                { quests = Dict.empty, randomSeed = gameModel.randomSeed, ids = gameModel.ids }
+                oldEffects
+                |> Debug.log "hullo?"
 
         newQuests : Dict ID Quest
         newQuests =
-            Dict.mapAndKeepJust
-                (\_ quest ->
-                    if Quest.isCompleted quest then
-                        Nothing
+            gameModel.quests
+                |> Dict.mapAndKeepJust
+                    (\_ quest ->
+                        if Quest.isCompleted quest then
+                            Nothing
 
-                    else
-                        when quest.duration is
-                            Duration.Temp { cyclesLeft } ->
-                                if cyclesLeft <= 0 then
-                                    Nothing
+                        else
+                            when quest.duration is
+                                Duration.Temp { cyclesLeft } ->
+                                    if cyclesLeft <= 0 then
+                                        Nothing
 
-                                else
-                                    Just { quest | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } }
+                                    else
+                                        Just { quest | duration = Duration.Temp { cyclesLeft = cyclesLeft - 1 } }
 
-                            Duration.Permanent ->
-                                Just quest
-                )
-                gameModel.quests
+                                Duration.Permanent ->
+                                    Just quest
+                    )
+                |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
     in
     { gameModel
     | player = playerWithNewPointsAndLevel
     , quests = newQuests
     , cycle = gameModel.cycle + 1
     , effects = newEffects
+    , randomSeed = spawnedQuestsAndRandomSeedAndIds.randomSeed
+    , ids = spawnedQuestsAndRandomSeedAndIds.ids
     }
 
 
@@ -399,6 +447,13 @@ type QuestGenerator
     = QuestGen (String -> GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed })
 
 
+generateQuest : QuestGenerator -> String -> GameModel -> Random.Seed -> { quest : Quest, randomSeed : Random.Seed }
+generateQuest questGen name game seed =
+    when questGen is
+        QuestGen g ->
+            g name game seed
+
+
 levelUp : QuestGenerator
 levelUp =
     QuestGen
@@ -421,7 +476,7 @@ levelUpSpawner =
     QuestGen
         (\name game seed ->
             { quest =
-                { title = "Spawn Level Up " ++ romanNumeral game.player.level
+                { title = "Venture into the Unknown " ++ romanNumeral game.player.level
                 , requirements =
                     [ QuestReq.init Stat.Pink game.player.level
                     , QuestReq.init Stat.Yellow game.player.level
@@ -430,7 +485,7 @@ levelUpSpawner =
                     , QuestReq.init Stat.Purple game.player.level
                     ]
                 , duration = Duration.Temp { cyclesLeft = 7 }
-                , completionEffects = []
+                , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
                 , generatorName = name
                 , isRecurring = False
                 }
