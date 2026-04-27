@@ -73,9 +73,6 @@ init =
         , questGeneratorsByName =
             Dict.empty
                 |> Dict.set "Level Up" levelUp
-                |> Dict.set "Level Up Spawner" levelUpSpawner
-                |> Dict.set "Easy Procedural" easyProcedural
-                |> Dict.set "Fuck Around" fuckAround
                 |> Dict.set "Find Out" findOut
         , generateQuestCounter = 0
         }
@@ -499,10 +496,16 @@ primaryQuestGenerator =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 85, value = easyProcedural }
+                        { weight = 79, value = easyProcedural }
                         [ { weight = 9, value = levelUpSpawner }
                         , { weight = 1, value = levelUp }
                         , { weight = 5, value = fuckAround }
+                        , { weight = 1, value = pinkLevelUp }
+                        , { weight = 1, value = yellowLevelUp }
+                        , { weight = 1, value = greenLevelUp }
+                        , { weight = 1, value = blueLevelUp }
+                        , { weight = 1, value = purpleLevelUp }
+                        , { weight = 1, value = whiteLevelUp }
                         ]
 
                 questGenAndSeed =
@@ -649,6 +652,144 @@ findOut =
                     , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
                     ]
                 , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+pinkLevelUp : QuestGenerator
+pinkLevelUp =
+    QuestGen
+        (\game seed _extraData ->
+            { quest =
+                { title = "An Algae Planet"
+                , requirements = [ QuestReq.init Stat.Pink 10 ]
+                , duration = Duration.Permanent
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = Stat.Pink
+                        , amount = 1
+                        , duration = Duration.Permanent
+                        }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+yellowLevelUp : QuestGenerator
+yellowLevelUp =
+    QuestGen
+        (\game seed _extraData ->
+            { quest =
+                { title = "A Sulfur Planet"
+                , requirements = [ QuestReq.init Stat.Yellow 10 ]
+                , duration = Duration.Permanent
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = Stat.Yellow
+                        , amount = 1
+                        , duration = Duration.Permanent
+                        }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+greenLevelUp : QuestGenerator
+greenLevelUp =
+    QuestGen
+        (\game seed _extraData ->
+            { quest =
+                { title = "A Lush Planet"
+                , requirements = [ QuestReq.init Stat.Green 10 ]
+                , duration = Duration.Permanent
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = Stat.Green
+                        , amount = 1
+                        , duration = Duration.Permanent
+                        }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+blueLevelUp : QuestGenerator
+blueLevelUp =
+    QuestGen
+        (\game seed _extraData ->
+            { quest =
+                { title = "An Ocean Planet"
+                , requirements = [ QuestReq.init Stat.Blue 10 ]
+                , duration = Duration.Permanent
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = Stat.Blue
+                        , amount = 1
+                        , duration = Duration.Permanent
+                        }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+purpleLevelUp : QuestGenerator
+purpleLevelUp =
+    QuestGen
+        (\game seed _extraData ->
+            { quest =
+                { title = "A Mire Planet"
+                , requirements = [ QuestReq.init Stat.Purple 10 ]
+                , duration = Duration.Permanent
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = Stat.Purple
+                        , amount = 1
+                        , duration = Duration.Permanent
+                        }
+                    ]
+                , expirationEffects = []
+                , isRecurring = False
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+whiteLevelUp : QuestGenerator
+whiteLevelUp =
+    QuestGen
+        (\game seed _extraData ->
+            { quest =
+                { title = "A Desert Planet"
+                , requirements = [ QuestReq.init Stat.White 10 ]
+                , duration = Duration.Permanent
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = Stat.White
+                        , amount = 1
+                        , duration = Duration.Permanent
+                        }
+                    ]
+                , expirationEffects = []
                 , isRecurring = False
                 }
             , randomSeed = seed
