@@ -251,7 +251,7 @@ nextCycleStartState gameModel =
                 initState =
                     { quests = newQuests, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
             in
-            if Dict.count newQuests < 3 then
+            if Dict.count newQuests < 5 then
                 Array.foldl
                     (\_ { quests, randomSeed, ids } ->
                         let
@@ -264,7 +264,7 @@ nextCycleStartState gameModel =
                         }
                     )
                     initState
-                    (Array.range (Dict.count newQuests + 1) 3)
+                    (Array.range (Dict.count newQuests + 1) 5)
 
             else
                 initState
@@ -495,12 +495,12 @@ primaryQuestGenerator =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 50, value = easyProcedural }
-                        [ { weight = 20, value = mediumProcedural }
-                        , { weight = 9, value = hardProcedural }
-                        , { weight = 9, value = levelUpSpawner }
+                        { weight = 45, value = easyProcedural }
+                        [ { weight = 25, value = mediumProcedural }
+                        , { weight = 12, value = hardProcedural }
+                        , { weight = 4, value = levelUpSpawner }
                         , { weight = 1, value = levelUp }
-                        , { weight = 5, value = fuckAround }
+                        , { weight = 7, value = fuckAround }
                         , { weight = 1, value = pinkLevelUp }
                         , { weight = 1, value = yellowLevelUp }
                         , { weight = 1, value = greenLevelUp }
@@ -641,16 +641,16 @@ findOut =
                             Stat.White
             in
             { quest =
-                { title = "Attack of the Bullshit Planet " ++ romanNumeral game.player.level
-                , requirements = [ QuestReq.init stat (game.player.level * 3) ]
+                { title = "An Angry Swarm of Intergalactic Wasps " ++ romanNumeral game.player.level
+                , requirements = [ QuestReq.init stat (game.player.level * 4) ]
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
-                    [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
-                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
-                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
-                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
-                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
-                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 2 * game.player.level, duration = Duration.Temp { cyclesLeft = 3 } }
+                    [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
+                    , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
                     ]
                 , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
                 , isRecurring = False
@@ -833,7 +833,7 @@ easyProcedural =
                 , completionEffects =
                     [ CycleStartEffect.PlayerGetsPoints
                         { stat = rewardAndSeed.value
-                        , amount = game.player.level * 2
+                        , amount = game.player.level
                         , duration = Duration.Temp { cyclesLeft = 1 }
                         }
                     ]
@@ -886,26 +886,11 @@ mediumProcedural =
                     Random.step randomStat rewardAndSeed1.seed
 
                 rewards =
-                    if rewardAndSeed1.value == rewardAndSeed2.value then
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 6
-                            , duration = Duration.Temp { cyclesLeft = 3 }
-                            }
+                    collapsePointEffects
+                        [ { stat = rewardAndSeed1.value, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
+                        , { stat = rewardAndSeed2.value, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
                         ]
-
-                    else
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 3 }
-                            }
-                        , CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed2.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 3 }
-                            }
-                        ]
+                        |> Array.map CycleStartEffect.PlayerGetsPoints
             in
             { quest =
                 { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
@@ -968,65 +953,12 @@ hardProcedural =
                     Random.step randomStat rewardAndSeed2.seed
 
                 rewards =
-                    if rewardAndSeed1.value == rewardAndSeed2.value then
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 9
-                            , duration = Duration.Temp { cyclesLeft = 5 }
-                            }
+                    collapsePointEffects
+                        [ { stat = rewardAndSeed1.value, amount = game.player.level * 2, duration = Duration.Temp { cyclesLeft = 3 } }
+                        , { stat = rewardAndSeed2.value, amount = game.player.level * 2, duration = Duration.Temp { cyclesLeft = 3 } }
+                        , { stat = rewardAndSeed3.value, amount = game.player.level * 2, duration = Duration.Temp { cyclesLeft = 3 } }
                         ]
-
-                    else if rewardAndSeed1.value == rewardAndSeed2.value then
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 6
-                            , duration = Duration.Temp { cyclesLeft = 9 }
-                            }
-                        , CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed3.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 9 }
-                            }
-                        ]
-
-                    else if rewardAndSeed2.value == rewardAndSeed3.value then
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 9 }
-                            }
-                        , CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed2.value
-                            , amount = game.player.level * 6
-                            , duration = Duration.Temp { cyclesLeft = 9 }
-                            }
-                        ]
-
-                    else if rewardAndSeed1.value == rewardAndSeed3.value then
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 6
-                            , duration = Duration.Temp { cyclesLeft = 9 }
-                            }
-                        , CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed2.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 9 }
-                            }
-                        ]
-
-                    else
-                        [ CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed1.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 3 }
-                            }
-                        , CycleStartEffect.PlayerGetsPoints
-                            { stat = rewardAndSeed2.value
-                            , amount = game.player.level * 3
-                            , duration = Duration.Temp { cyclesLeft = 3 }
-                            }
-                        ]
+                        |> Array.map CycleStartEffect.PlayerGetsPoints
             in
             { quest =
                 { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
@@ -1141,7 +1073,7 @@ randomSciFiQuestNames =
         , "Stolen Suns"
         , "The Warp Rift Incident"
         , "Children of the Comet"
-        , "The Synthetic Messiah"
+        , "Feed My Cat"
         , "Countdown to Planetfall"
         , "The Forbidden Jump Coordinates"
         , "The Last Human Frequency"
@@ -1200,5 +1132,24 @@ collapseRequirements reqs =
         reqs
 
 
-
--- TODO: collapseEffects
+collapsePointEffects : Array { stat : Stat, amount : Int, duration : Duration } -> Array { stat : Stat, amount : Int, duration : Duration }
+collapsePointEffects effects =
+    Array.foldl
+        (\effect collapsed ->
+            collapsed
+                |> Array.findFirst (\effect_ -> effect_.stat == effect.stat && effect_.duration == effect.duration)
+                |> Maybe.map
+                    (\{ index } ->
+                        Array.update index
+                            (\effect_ ->
+                                { stat = effect.stat
+                                , amount = effect.amount + effect_.amount
+                                , duration = effect.duration
+                                }
+                            )
+                            collapsed
+                    )
+                |> Maybe.withDefault (Array.pushLast effect collapsed)
+        )
+        []
+        effects

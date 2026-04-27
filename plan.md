@@ -24,6 +24,13 @@
 - [X] Generate initial seed
 - [X] Expiration effects
 - [ ] Content!
+- [ ] Display three turns worth of stat boosts (fix bug where it only shows stat boosts from this cycle)
+- [ ] Maybe consider a way to convert one stat to another at a really bad exchange rate
+- [ ] Maybe consider a recycle quest button
+- [ ] Prevent another Level Up or Spawner from showing up if there's already one
+- [ ] Display the number of quests at the top
+- [ ] Display number of quests completed
+- [ ] Easy and medium quests should always return a stat that they don't take, this makes them poor but useful conversions
 - [ ] Find minimal repro for a bug with Gren formatter
 
 # UI

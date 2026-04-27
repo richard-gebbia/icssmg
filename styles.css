@@ -266,6 +266,7 @@ hr {
 .player-info-panel {
     border-left: 4px var(--white) solid;
     width: 400px;
+    min-width: 400px;
     padding: 2rem;
     display: flex;
     flex-direction: column;
