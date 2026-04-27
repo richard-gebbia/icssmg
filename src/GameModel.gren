@@ -57,7 +57,14 @@ init =
                     { title = "Level Up I"
                     , requirements = [ QuestReq.init Stat.White 1 ]
                     , duration = Duration.Permanent
-                    , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
+                    , completionEffects =
+                        [ CycleStartEffect.PlayerLevelsUp
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        ]
                     , expirationEffects = []
                     , isRecurring = False
                     }
@@ -189,6 +196,21 @@ nextCycleStartState gameModel =
                 { quests = Dict.empty, randomSeed = gameModel.randomSeed, ids = gameModel.ids }
                 oldEffects
 
+        randomNewQuestAndSeedAndIds : Random.Seed -> Ids -> { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
+        randomNewQuestAndSeedAndIds randomSeed ids =
+            let
+                questAndSeed =
+                    generateQuest gameModel.primaryQuestGenerator gameModel randomSeed
+
+                idAndIds : { id : ID, nextIds : Ids }
+                idAndIds =
+                    Ids.next ids
+            in
+            { quests = Dict.empty |> Dict.set idAndIds.id questAndSeed.quest
+            , randomSeed = questAndSeed.randomSeed
+            , ids = idAndIds.nextIds
+            }
+
         newQuestForCycleAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
         newQuestForCycleAndIds =
             let
@@ -201,18 +223,7 @@ nextCycleStartState gameModel =
                     spawnedQuestsAndRandomSeedAndIds.ids
             in
             if gameModel.generateQuestCounter == 0 then
-                let
-                    questAndSeed =
-                        generateQuest gameModel.primaryQuestGenerator gameModel randomSeed
-
-                    idAndIds : { id : ID, nextIds : Ids }
-                    idAndIds =
-                        Ids.next ids
-                in
-                { quests = Dict.empty |> Dict.set idAndIds.id questAndSeed.quest
-                , randomSeed = questAndSeed.randomSeed
-                , ids = idAndIds.nextIds
-                }
+                randomNewQuestAndSeedAndIds randomSeed ids
 
             else
                 { quests = Dict.empty, randomSeed = randomSeed, ids = ids }
@@ -235,14 +246,38 @@ nextCycleStartState gameModel =
                     )
                 |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
                 |> Dict.union newQuestForCycleAndIds.quests
+
+        finalNewQuestsAndSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
+        finalNewQuestsAndSeedAndIds =
+            let
+                initState =
+                    { quests = newQuests, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
+            in
+            if Dict.isEmpty newQuests then
+                Array.foldl
+                    (\_ { quests, randomSeed, ids } ->
+                        let
+                            questsAndSeedAndId =
+                                randomNewQuestAndSeedAndIds randomSeed ids
+                        in
+                        { quests = Dict.union quests questsAndSeedAndId.quests
+                        , randomSeed = questsAndSeedAndId.randomSeed
+                        , ids = questsAndSeedAndId.ids
+                        }
+                    )
+                    initState
+                    (Array.range 1 3)
+
+            else
+                initState
     in
     { gameModel
     | player = playerWithNewPointsAndLevel
-    , quests = newQuests
+    , quests = finalNewQuestsAndSeedAndIds.quests
     , cycle = gameModel.cycle + 1
     , effects = newEffects
-    , randomSeed = newQuestForCycleAndIds.randomSeed
-    , ids = newQuestForCycleAndIds.ids
+    , randomSeed = finalNewQuestsAndSeedAndIds.randomSeed
+    , ids = finalNewQuestsAndSeedAndIds.ids
     , generateQuestCounter = Math.modBy 3 (gameModel.generateQuestCounter + 1)
     }
 
@@ -527,7 +562,7 @@ easyProcedural =
 
                 toRandomWeight : { stat : Stat, amount : Int } -> { weight : Float, value : Stat }
                 toRandomWeight { stat, amount } =
-                    { weight = toFloat amount, value = stat }
+                    { weight = toFloat (max amount 1), value = stat }
 
                 weightedStatGenerator : Random.Generator Stat
                 weightedStatGenerator =
@@ -701,4 +736,4 @@ playerNextCycleStatsDesc gameModel =
 
 randomStat : Random.Generator Stat
 randomStat =
-    Random.uniform Stat.Pink [ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple, Stat.White ]
+    Random.uniform Stat.Pink [ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
