@@ -59,11 +59,11 @@ init =
                     , duration = Duration.Permanent
                     , completionEffects =
                         [ CycleStartEffect.PlayerLevelsUp
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
                         ]
                     , expirationEffects = []
                     , isRecurring = False
@@ -253,7 +253,7 @@ nextCycleStartState gameModel =
                 initState =
                     { quests = newQuests, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
             in
-            if Dict.isEmpty newQuests then
+            if Dict.count newQuests < 3 then
                 Array.foldl
                     (\_ { quests, randomSeed, ids } ->
                         let
@@ -266,7 +266,7 @@ nextCycleStartState gameModel =
                         }
                     )
                     initState
-                    (Array.range 1 3)
+                    (Array.range (Dict.count newQuests + 1) 3)
 
             else
                 initState
@@ -720,16 +720,12 @@ playerNextCycleStatsDesc gameModel =
 
         purple =
             pointsForStatNextCycle Stat.Purple gameModel
-
-        white =
-            pointsForStatNextCycle Stat.White gameModel
     in
     [ { stat = Stat.Pink, amount = pink }
     , { stat = Stat.Yellow, amount = yellow }
     , { stat = Stat.Green, amount = green }
     , { stat = Stat.Blue, amount = blue }
     , { stat = Stat.Purple, amount = purple }
-    , { stat = Stat.White, amount = white }
     ]
         |> Array.sortBy (\{ stat, amount } -> -amount)
 

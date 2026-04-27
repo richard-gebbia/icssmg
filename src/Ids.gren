@@ -13,7 +13,7 @@ type alias Ids =
 
 init : Ids
 init =
-    0
+    2
 
 
 next : Ids -> { id : ID, nextIds : Ids }

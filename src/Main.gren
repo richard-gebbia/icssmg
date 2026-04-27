@@ -88,7 +88,7 @@ update msg model =
 
         Msg.PlayerCommitsCurrentCycle ->
             { model = { model | isCommittingCycle = True }
-            , command = Process.sleep 1000 |> Task.perform (\_ -> Msg.CommitCycleAnimationEnds)
+            , command = Process.sleep 500 |> Task.perform (\_ -> Msg.CommitCycleAnimationEnds)
             }
 
         Msg.CommitCycleAnimationEnds ->

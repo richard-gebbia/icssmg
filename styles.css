@@ -130,7 +130,7 @@ hr {
 .quest-grid-container {
     display: grid;
     grid-template-rows: 1fr;
-    transition: grid-template-rows 1s;
+    transition: grid-template-rows 0.5s;
     list-style: none;
 }
 
@@ -147,7 +147,7 @@ hr {
     border-radius: 6px;
     align-items: start;
     background-color: var(--purple-5);
-    transition: padding 1s;
+    transition: padding 0.5s;
     overflow: hidden;
 }
 
