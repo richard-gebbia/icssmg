@@ -874,10 +874,7 @@ mediumProcedural =
                     Random.step weightedStatGenerator statAndSeed1.seed
 
                 requirements =
-                    if statAndSeed1.value == statAndSeed2.value then
-                        [ QuestReq.init statAndSeed1.value (game.player.level * 4) ]
-
-                    else
+                    collapseRequirements
                         [ QuestReq.init statAndSeed1.value (game.player.level * 2)
                         , QuestReq.init statAndSeed2.value (game.player.level * 2)
                         ]
@@ -955,25 +952,7 @@ hardProcedural =
                     Random.step weightedStatGenerator statAndSeed2.seed
 
                 requirements =
-                    if statAndSeed1.value == statAndSeed2.value && statAndSeed2.value == statAndSeed3.value then
-                        [ QuestReq.init statAndSeed1.value (game.player.level * 6) ]
-
-                    else if statAndSeed1.value == statAndSeed2.value then
-                        [ QuestReq.init statAndSeed1.value (game.player.level * 4)
-                        , QuestReq.init statAndSeed3.value (game.player.level * 2)
-                        ]
-
-                    else if statAndSeed2.value == statAndSeed3.value then
-                        [ QuestReq.init statAndSeed1.value (game.player.level * 2)
-                        , QuestReq.init statAndSeed2.value (game.player.level * 4)
-                        ]
-
-                    else if statAndSeed1.value == statAndSeed3.value then
-                        [ QuestReq.init statAndSeed1.value (game.player.level * 4)
-                        , QuestReq.init statAndSeed2.value (game.player.level * 2)
-                        ]
-
-                    else
+                    collapseRequirements
                         [ QuestReq.init statAndSeed1.value (game.player.level * 2)
                         , QuestReq.init statAndSeed2.value (game.player.level * 2)
                         , QuestReq.init statAndSeed3.value (game.player.level * 2)
@@ -1199,3 +1178,27 @@ playerNextCycleStatsDesc gameModel =
 randomStat : Random.Generator Stat
 randomStat =
     Random.uniform Stat.Pink [ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
+
+
+collapseRequirements : Array QuestReq.Requirement -> Array QuestReq.Requirement
+collapseRequirements reqs =
+    Array.foldl
+        (\req collapsed ->
+            let
+                stat =
+                    QuestReq.stat req
+            in
+            collapsed
+                |> Array.findFirst (\req_ -> QuestReq.stat req_ == stat)
+                |> Maybe.map
+                    (\{ index } ->
+                        Array.update index (\req_ -> QuestReq.init stat (QuestReq.total req_ + QuestReq.total req)) collapsed
+                    )
+                |> Maybe.withDefault (Array.pushLast req collapsed)
+        )
+        []
+        reqs
+
+
+
+-- TODO: collapseEffects
