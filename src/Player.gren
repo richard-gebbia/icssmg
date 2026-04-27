@@ -128,11 +128,13 @@ withHpChanged amount player =
     }
 
 
+{-| Updates Max HP. This can make the player HP go above max HP for optimization purposes.
+    Call adjustedForMaxHP after all HP effects are evaluated to factor in Max HP.
+-}
 withMaxHpChanged : Int -> Player -> Player
 withMaxHpChanged amount player =
     { player
-    | hp = player.hp + amount
-    , maxHP = player.maxHP + amount
+    | maxHP = player.maxHP + amount
     }
 
 

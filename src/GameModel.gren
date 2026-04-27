@@ -56,6 +56,7 @@ init =
                     , requirements = [ QuestReq.init Stat.Blue 1 ]
                     , duration = Duration.Permanent
                     , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
+                    , expirationEffects = []
                     , generatorName = "BarBaz"
                     , isRecurring = False
                     }
@@ -72,14 +73,16 @@ init =
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 3, duration = Duration.Permanent }
                         ]
+                    , expirationEffects = []
                     , generatorName = "FooBar"
                     , isRecurring = False
                     }
                 |> Dict.set 3
                     { title = "Third Quest"
                     , requirements = [ QuestReq.init Stat.Blue 1 ]
-                    , duration = Duration.Permanent
+                    , duration = Duration.Temp { cyclesLeft = 1 }
                     , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
+                    , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
                     , generatorName = "FooBaz"
                     , isRecurring = False
                     }
@@ -88,12 +91,12 @@ init =
                     , requirements = [ QuestReq.init Stat.Pink 1 ]
                     , duration = Duration.Temp { cyclesLeft = 7 }
                     , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
+                    , expirationEffects = []
                     , generatorName = "Level Up Spawner"
                     , isRecurring = False
                     }
         , effects =
             [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 2, duration = Duration.Temp { cyclesLeft = 3 } }
-            , CycleStartEffect.PlayerHeals { amount = 2 }
             , CycleStartEffect.PlayerMaxHPChanges { amount = -1 }
             , CycleStartEffect.PlayerLevelsUp
             , CycleStartEffect.PlayerLevelsUp
@@ -235,7 +238,7 @@ nextCycleStartState gameModel =
                         else
                             when quest.duration is
                                 Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 0 then
+                                    if cyclesLeft <= 1 then
                                         Nothing
 
                                     else
@@ -431,7 +434,16 @@ tentativeEffects { quests, effects } =
         ++ Array.mapAndFlatten
             (\quest ->
                 if not (Quest.isCompleted quest) then
-                    []
+                    when quest.duration is
+                        Duration.Temp { cyclesLeft } ->
+                            if cyclesLeft <= 1 then
+                                quest.expirationEffects
+
+                            else
+                                []
+
+                        Duration.Permanent ->
+                            []
 
                 else
                     quest.completionEffects
@@ -463,6 +475,7 @@ levelUp =
                 , requirements = [ QuestReq.init Stat.White (2 ^ game.player.level) ]
                 , duration = Duration.Permanent
                 , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
+                , expirationEffects = []
                 , generatorName = name
                 , isRecurring = False
                 }
@@ -487,6 +500,7 @@ levelUpSpawner =
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up" } ]
                 , generatorName = name
+                , expirationEffects = []
                 , isRecurring = False
                 }
             , randomSeed = seed

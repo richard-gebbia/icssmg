@@ -82,6 +82,15 @@ viewQuest player isCommittingCycle questId quest =
                                 "Never goes away"
                         )
                     ]
+                , if Array.isEmpty quest.expirationEffects then
+                    Html.text ""
+
+                  else
+                    Html.div [ HtmlAttrs.class "consequences-section" ]
+                        [ Html.b [] [ Html.text "On expiration:" ]
+                        , Html.ul []
+                            (Array.map viewEffectListItem quest.expirationEffects)
+                        ]
                 ]
             ]
     }

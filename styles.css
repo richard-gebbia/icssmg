@@ -273,6 +273,10 @@ hr {
     justify-content: space-between;
 }
 
+.consequences-section {
+    color: var(--orange);
+}
+
 .player-info-panel-top-section {
     display: flex;
     flex-direction: column;

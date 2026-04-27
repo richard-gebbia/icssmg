@@ -21,7 +21,8 @@
 - [X] Grid layout for quest
 - [X] Font
 - [X] Background
-- [ ] Generate initial seed
+- [X] Generate initial seed
+- [X] Expiration effects
 - [ ] Content!
 - [ ] Find minimal repro for a bug with Gren formatter
 
