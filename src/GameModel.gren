@@ -23,6 +23,7 @@ type alias GameModel =
     , primaryQuestGenerator : QuestGenerator
     , questGeneratorsByName : Dict String QuestGenerator
     , generateQuestCounter : Int
+    , numQuestsCompleted : Int
     }
 
 
@@ -54,7 +55,8 @@ init =
         , quests =
             Dict.empty
                 |> Dict.set 1
-                    { title = "Initial Venture"
+                    { id = "Initial Venture"
+                    , title = "Initial Venture"
                     , requirements = [ QuestReq.init Stat.White 1 ]
                     , duration = Duration.Permanent
                     , completionEffects =
@@ -76,6 +78,7 @@ init =
                 |> Dict.set "Stat Chain 3" statChain3
                 |> Dict.set "Recurring Stat Pump" recurringStatPump
         , generateQuestCounter = 0
+        , numQuestsCompleted = 0
         }
     , command = Random.generate Msg.GeneratedInitialSeed Random.independentSeed
     }
@@ -98,6 +101,19 @@ nextCycleStartState gameModel =
         oldEffects : Array CycleStartEffect
         oldEffects =
             tentativeEffects gameModel
+
+        numQuestsCompletedThisCycle : Int
+        numQuestsCompletedThisCycle =
+            Dict.foldl
+                (\_ quest numCompleted ->
+                    if Quest.isCompleted quest then
+                        numCompleted + 1
+
+                    else
+                        numCompleted
+                )
+                0
+                gameModel.quests
 
         newEffects : Array CycleStartEffect
         newEffects =
@@ -279,6 +295,7 @@ nextCycleStartState gameModel =
     , randomSeed = finalNewQuestsAndSeedAndIds.randomSeed
     , ids = finalNewQuestsAndSeedAndIds.ids
     , generateQuestCounter = Math.modBy 3 (gameModel.generateQuestCounter + 1)
+    , numQuestsCompleted = gameModel.numQuestsCompleted + numQuestsCompletedThisCycle
     }
 
 
@@ -494,31 +511,61 @@ primaryQuestGenerator =
     QuestGen
         (\game seed _extraData ->
             let
+                optionIf : a -> Bool -> Array a -> Array a
+                optionIf x pred arr =
+                    if pred then
+                        Array.pushLast x arr
+
+                    else
+                        arr
+
+                questDoesntExist : String -> Bool
+                questDoesntExist id =
+                    Dict.values game.quests
+                        |> Array.any (\quest -> quest.id == id)
+                        |> not
+
+                statChainOptionIf : Stat -> Array { weight : number, value : QuestGenerator } -> Array { weight : number, value : QuestGenerator }
+                statChainOptionIf stat =
+                    let
+                        statStr =
+                            Stat.toString stat
+                    in
+                    optionIf { weight = 1, value = statChain1 stat }
+                        (questDoesntExist ("Stat Chain 1 " ++ statStr)
+                            || questDoesntExist ("Stat Chain 2 " ++ statStr)
+                            || questDoesntExist ("Stat Chain 3 " ++ statStr)
+                            || questDoesntExist ("Recurring Stat Pump " ++ statStr)
+                        )
+
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
                         { weight = 38, value = easyProcedural }
-                        [ { weight = 18, value = mediumProcedural }
-                        , { weight = 8, value = hardProcedural }
-                        , { weight = 8, value = easyWithDamage }
-                        , { weight = 4, value = mediumWithHealing }
-                        , { weight = 4, value = hardWithMaxHpUp }
-                        , { weight = 4, value = levelUpSpawner }
-                        , { weight = 1, value = levelUp }
-                        , { weight = 4, value = fuckAround }
-                        , { weight = 1, value = statLevelUp Stat.Pink "An Algae Planet" }
-                        , { weight = 1, value = statLevelUp Stat.Yellow "A Sulfur Planet" }
-                        , { weight = 1, value = statLevelUp Stat.Green "A Lush Planet" }
-                        , { weight = 1, value = statLevelUp Stat.Blue "An Ocean Planet" }
-                        , { weight = 1, value = statLevelUp Stat.Purple "A Mire Planet" }
-                        , { weight = 1, value = statLevelUp Stat.White "An Ice Planet" }
-                        , { weight = 1, value = statChain1 Stat.Pink }
-                        , { weight = 1, value = statChain1 Stat.Yellow }
-                        , { weight = 1, value = statChain1 Stat.Green }
-                        , { weight = 1, value = statChain1 Stat.Blue }
-                        , { weight = 1, value = statChain1 Stat.Purple }
-                        , { weight = 1, value = statChain1 Stat.White }
-                        ]
+                        ([ { weight = 18, value = mediumProcedural }
+                         , { weight = 8, value = hardProcedural }
+                         , { weight = 8, value = easyWithDamage }
+                         , { weight = 4, value = mediumWithHealing }
+                         , { weight = 4, value = hardWithMaxHpUp }
+                         , { weight = 4, value = fuckAround }
+                         , { weight = 1, value = statLevelUp Stat.Pink "An Algae Planet" }
+                         , { weight = 1, value = statLevelUp Stat.Yellow "A Sulfur Planet" }
+                         , { weight = 1, value = statLevelUp Stat.Green "A Lush Planet" }
+                         , { weight = 1, value = statLevelUp Stat.Blue "An Ocean Planet" }
+                         , { weight = 1, value = statLevelUp Stat.Purple "A Mire Planet" }
+                         , { weight = 1, value = statLevelUp Stat.White "An Ice Planet" }
+                         ]
+                            |> optionIf { weight = 4, value = levelUpSpawner }
+                                (questDoesntExist "Level Up" || questDoesntExist "Level Up Spawner")
+                            |> optionIf { weight = 1, value = levelUp }
+                                (questDoesntExist "Level Up" || questDoesntExist "Level Up Spawner")
+                            |> statChainOptionIf Stat.Pink
+                            |> statChainOptionIf Stat.Yellow
+                            |> statChainOptionIf Stat.Green
+                            |> statChainOptionIf Stat.Blue
+                            |> statChainOptionIf Stat.Purple
+                            |> statChainOptionIf Stat.White
+                        )
 
                 questGenAndSeed =
                     Random.step options seed
@@ -532,7 +579,8 @@ levelUp =
     QuestGen
         (\game seed _extraData ->
             { quest =
-                { title = "Level Up " ++ romanNumeral game.player.level
+                { id = "Level Up"
+                , title = "Level Up " ++ romanNumeral game.player.level
                 , requirements = [ QuestReq.init Stat.White (2 ^ game.player.level) ]
                 , duration = Duration.Permanent
                 , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
@@ -548,7 +596,8 @@ levelUpSpawner =
     QuestGen
         (\game seed _extraData ->
             { quest =
-                { title = "Venture into the Unknown " ++ romanNumeral game.player.level
+                { id = "Level Up Spawner"
+                , title = "Venture into the Unknown " ++ romanNumeral game.player.level
                 , requirements =
                     [ QuestReq.init Stat.Pink game.player.level
                     , QuestReq.init Stat.Yellow game.player.level
@@ -587,7 +636,8 @@ fuckAround =
                         |> collapseRequirements
             in
             { quest =
-                { title = "Nagging Curiosity " ++ romanNumeral game.player.level
+                { id = "Fuck Around"
+                , title = "Nagging Curiosity " ++ romanNumeral game.player.level
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
@@ -613,7 +663,8 @@ findOut =
                         |> Maybe.withDefault Stat.White
             in
             { quest =
-                { title = "An Angry Swarm of Intergalactic Wasps " ++ romanNumeral game.player.level
+                { id = "Find Out"
+                , title = "An Angry Swarm of Intergalactic Wasps " ++ romanNumeral game.player.level
                 , requirements = [ QuestReq.init stat (game.player.level * 4) ]
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
@@ -636,7 +687,8 @@ statLevelUp stat title =
     QuestGen
         (\game seed _extraData ->
             { quest =
-                { title = title
+                { id = "Stat Level Up"
+                , title = title
                 , requirements = [ QuestReq.init stat 10 ]
                 , duration = Duration.Permanent
                 , completionEffects =
@@ -682,7 +734,8 @@ easyProcedural =
                     Random.step (randomStat [] [ statAndSeed.value ]) statAndSeed.seed
             in
             { quest =
-                { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                { id = "Easy Procedural"
+                , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
                 , requirements = [ QuestReq.init statAndSeed.value (game.player.level * 2) ]
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
@@ -747,7 +800,8 @@ mediumProcedural =
                         |> Array.map CycleStartEffect.PlayerGetsPoints
             in
             { quest =
-                { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                { id = "Medium Procedural"
+                , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects = rewards
@@ -814,7 +868,8 @@ hardProcedural =
                         |> Array.map CycleStartEffect.PlayerGetsPoints
             in
             { quest =
-                { title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                { id = "Hard Procedural"
+                , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = rewards
@@ -838,7 +893,8 @@ easyWithDamage =
             in
             { quest =
                 { quest
-                | title = "Fire Ants But They're Aliens " ++ romanNumeral game.player.level
+                | id = "Easy with Damage"
+                , title = "Fire Ants But They're Aliens " ++ romanNumeral game.player.level
                 , expirationEffects = Array.pushLast (CycleStartEffect.PlayerTakesDamage { amount = 1 }) quest.expirationEffects
                 }
             , randomSeed = questAndSeed.randomSeed
@@ -859,7 +915,8 @@ mediumWithHealing =
             in
             { quest =
                 { quest
-                | title = "Holo-Cantina Setup/Teardown " ++ romanNumeral game.player.level
+                | id = "Medium with Healing"
+                , title = "Holo-Cantina Setup/Teardown " ++ romanNumeral game.player.level
                 , completionEffects = Array.pushLast (CycleStartEffect.PlayerHeals { amount = 2 }) quest.completionEffects
                 }
             , randomSeed = questAndSeed.randomSeed
@@ -880,7 +937,8 @@ hardWithMaxHpUp =
             in
             { quest =
                 { quest
-                | title = "Bionic Factory CEO Rescue " ++ romanNumeral game.player.level
+                | id = "Hard with Max HP Up"
+                , title = "Bionic Factory CEO Rescue " ++ romanNumeral game.player.level
                 , completionEffects = Array.pushLast (CycleStartEffect.PlayerMaxHPChanges { amount = 2 }) quest.completionEffects
                 }
             , randomSeed = questAndSeed.randomSeed
@@ -893,7 +951,8 @@ statChain1 stat =
     QuestGen
         (\game seed extraData ->
             { quest =
-                { title = "Journey to the " ++ Stat.shape stat ++ " Nebula"
+                { id = "Stat Chain 1 " ++ Stat.toString stat
+                , title = "Journey to the " ++ Stat.shape stat ++ " Nebula"
                 , requirements = [ QuestReq.init stat (game.player.level * 2) ]
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
@@ -919,7 +978,8 @@ statChain2 =
                         |> Maybe.withDefault Stat.White
             in
             { quest =
-                { title = "The Gooey " ++ Stat.shape stat ++ " Center"
+                { id = "Stat Chain 2 " ++ Stat.toString stat
+                , title = "The Gooey " ++ Stat.shape stat ++ " Center"
                 , requirements = [ QuestReq.init stat (game.player.level * 5) ]
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects =
@@ -945,7 +1005,8 @@ statChain3 =
                         |> Maybe.withDefault Stat.White
             in
             { quest =
-                { title = "Escape from the " ++ Stat.shape stat ++ " Event Horizon"
+                { id = "Stat Chain 3 " ++ Stat.toString stat
+                , title = "Escape from the " ++ Stat.shape stat ++ " Event Horizon"
                 , requirements =
                     Array.mapAndKeepJust
                         (\stat_ ->
@@ -986,7 +1047,8 @@ recurringStatPump =
                     Random.step (randomStat [ Stat.White ] []) statAndSeed1.seed
             in
             { quest =
-                { title = "Channel the " ++ Stat.shape stat ++ " Nebula"
+                { id = "Recurring Stat Pump " ++ Stat.toString stat
+                , title = "Channel the " ++ Stat.shape stat ++ " Nebula"
                 , requirements =
                     [ QuestReq.init statAndSeed1.value 1
                     , QuestReq.init statAndSeed2.value 1

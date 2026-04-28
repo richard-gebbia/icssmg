@@ -25,9 +25,17 @@ view gameModel isCommittingCycle =
 
 
 viewQuests : GameModel -> Bool -> Html Msg
-viewQuests { player, quests } isCommittingCycle =
+viewQuests { player, quests, numQuestsCompleted } isCommittingCycle =
     Html.section [ HtmlAttrs.class "completing-quests-frame" ]
-        [ Html.h2 [] [ Html.text "Quests" ]
+        [ Html.h2 []
+            [ Html.text
+                ("Quests (Available: "
+                    ++ String.fromInt (Dict.count quests)
+                    ++ ", Completed: "
+                    ++ String.fromInt numQuestsCompleted
+                    ++ ")"
+                )
+            ]
         , HtmlKeyed.ul [ HtmlAttrs.class "quests-list" ]
             (Dict.map (viewQuest player isCommittingCycle) quests |> Dict.values)
         ]

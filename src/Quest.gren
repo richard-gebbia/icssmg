@@ -7,7 +7,8 @@ import Stat exposing (Stat)
 
 
 type alias Quest =
-    { title : String
+    { id : String
+    , title : String
     , requirements : Array Requirement
     , duration : Duration
     , completionEffects : Array CycleStartEffect
