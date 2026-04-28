@@ -12,7 +12,6 @@ type alias Quest =
     , duration : Duration
     , completionEffects : Array CycleStartEffect
     , expirationEffects : Array CycleStartEffect
-    , isRecurring : Bool
     }
 
 

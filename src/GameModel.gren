@@ -65,7 +65,6 @@ init =
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
                         ]
                     , expirationEffects = []
-                    , isRecurring = False
                     }
         , effects = []
         , primaryQuestGenerator = primaryQuestGenerator
@@ -73,6 +72,9 @@ init =
             Dict.empty
                 |> Dict.set "Level Up" levelUp
                 |> Dict.set "Find Out" findOut
+                |> Dict.set "Stat Chain 2" statChain2
+                |> Dict.set "Stat Chain 3" statChain3
+                |> Dict.set "Recurring Stat Pump" recurringStatPump
         , generateQuestCounter = 0
         }
     , command = Random.generate Msg.GeneratedInitialSeed Random.independentSeed
@@ -495,20 +497,27 @@ primaryQuestGenerator =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 40, value = easyProcedural }
-                        [ { weight = 20, value = mediumProcedural }
-                        , { weight = 10, value = hardProcedural }
-                        , { weight = 10, value = easyWithDamage }
-                        , { weight = 6, value = mediumWithHealing }
+                        { weight = 38, value = easyProcedural }
+                        [ { weight = 18, value = mediumProcedural }
+                        , { weight = 8, value = hardProcedural }
+                        , { weight = 8, value = easyWithDamage }
+                        , { weight = 4, value = mediumWithHealing }
+                        , { weight = 4, value = hardWithMaxHpUp }
                         , { weight = 4, value = levelUpSpawner }
                         , { weight = 1, value = levelUp }
                         , { weight = 4, value = fuckAround }
-                        , { weight = 1, value = pinkLevelUp }
-                        , { weight = 1, value = yellowLevelUp }
-                        , { weight = 1, value = greenLevelUp }
-                        , { weight = 1, value = blueLevelUp }
-                        , { weight = 1, value = purpleLevelUp }
-                        , { weight = 1, value = whiteLevelUp }
+                        , { weight = 1, value = statLevelUp Stat.Pink "An Algae Planet" }
+                        , { weight = 1, value = statLevelUp Stat.Yellow "A Sulfur Planet" }
+                        , { weight = 1, value = statLevelUp Stat.Green "A Lush Planet" }
+                        , { weight = 1, value = statLevelUp Stat.Blue "An Ocean Planet" }
+                        , { weight = 1, value = statLevelUp Stat.Purple "A Mire Planet" }
+                        , { weight = 1, value = statLevelUp Stat.White "An Ice Planet" }
+                        , { weight = 1, value = statChain1 Stat.Pink }
+                        , { weight = 1, value = statChain1 Stat.Yellow }
+                        , { weight = 1, value = statChain1 Stat.Green }
+                        , { weight = 1, value = statChain1 Stat.Blue }
+                        , { weight = 1, value = statChain1 Stat.Purple }
+                        , { weight = 1, value = statChain1 Stat.White }
                         ]
 
                 questGenAndSeed =
@@ -528,7 +537,6 @@ levelUp =
                 , duration = Duration.Permanent
                 , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
                 , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = seed
             }
@@ -551,7 +559,6 @@ levelUpSpawner =
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up", extraData = "" } ]
                 , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = seed
             }
@@ -578,39 +585,17 @@ fuckAround =
                     , QuestReq.init statAndSeed3.value 1
                     ]
                         |> collapseRequirements
-
-                extraDataEncoder : Stat -> String
-                extraDataEncoder stat =
-                    when stat is
-                        Stat.Pink ->
-                            "pink"
-
-                        Stat.Yellow ->
-                            "yellow"
-
-                        Stat.Green ->
-                            "green"
-
-                        Stat.Blue ->
-                            "blue"
-
-                        Stat.Purple ->
-                            "purple"
-
-                        _ ->
-                            "nothing"
             in
             { quest =
                 { title = "Nagging Curiosity " ++ romanNumeral game.player.level
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
-                    [ CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = extraDataEncoder statAndSeed1.value }
-                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = extraDataEncoder statAndSeed2.value }
-                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = extraDataEncoder statAndSeed3.value }
+                    [ CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = Stat.toString statAndSeed1.value }
+                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = Stat.toString statAndSeed2.value }
+                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = Stat.toString statAndSeed3.value }
                     ]
                 , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = statAndSeed3.seed
             }
@@ -624,24 +609,8 @@ findOut =
             let
                 stat : Stat
                 stat =
-                    when extraData is
-                        "pink" ->
-                            Stat.Pink
-
-                        "yellow" ->
-                            Stat.Yellow
-
-                        "green" ->
-                            Stat.Green
-
-                        "blue" ->
-                            Stat.Blue
-
-                        "purple" ->
-                            Stat.Purple
-
-                        _ ->
-                            Stat.White
+                    Stat.fromString extraData
+                        |> Maybe.withDefault Stat.White
             in
             { quest =
                 { title = "An Angry Swarm of Intergalactic Wasps " ++ romanNumeral game.player.level
@@ -656,145 +625,28 @@ findOut =
                     , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
                     ]
                 , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
-                , isRecurring = False
                 }
             , randomSeed = seed
             }
         )
 
 
-pinkLevelUp : QuestGenerator
-pinkLevelUp =
+statLevelUp : Stat -> String -> QuestGenerator
+statLevelUp stat title =
     QuestGen
         (\game seed _extraData ->
             { quest =
-                { title = "An Algae Planet"
-                , requirements = [ QuestReq.init Stat.Pink 10 ]
+                { title = title
+                , requirements = [ QuestReq.init stat 10 ]
                 , duration = Duration.Permanent
                 , completionEffects =
                     [ CycleStartEffect.PlayerGetsPoints
-                        { stat = Stat.Pink
+                        { stat = stat
                         , amount = 1
                         , duration = Duration.Permanent
                         }
                     ]
                 , expirationEffects = []
-                , isRecurring = False
-                }
-            , randomSeed = seed
-            }
-        )
-
-
-yellowLevelUp : QuestGenerator
-yellowLevelUp =
-    QuestGen
-        (\game seed _extraData ->
-            { quest =
-                { title = "A Sulfur Planet"
-                , requirements = [ QuestReq.init Stat.Yellow 10 ]
-                , duration = Duration.Permanent
-                , completionEffects =
-                    [ CycleStartEffect.PlayerGetsPoints
-                        { stat = Stat.Yellow
-                        , amount = 1
-                        , duration = Duration.Permanent
-                        }
-                    ]
-                , expirationEffects = []
-                , isRecurring = False
-                }
-            , randomSeed = seed
-            }
-        )
-
-
-greenLevelUp : QuestGenerator
-greenLevelUp =
-    QuestGen
-        (\game seed _extraData ->
-            { quest =
-                { title = "A Lush Planet"
-                , requirements = [ QuestReq.init Stat.Green 10 ]
-                , duration = Duration.Permanent
-                , completionEffects =
-                    [ CycleStartEffect.PlayerGetsPoints
-                        { stat = Stat.Green
-                        , amount = 1
-                        , duration = Duration.Permanent
-                        }
-                    ]
-                , expirationEffects = []
-                , isRecurring = False
-                }
-            , randomSeed = seed
-            }
-        )
-
-
-blueLevelUp : QuestGenerator
-blueLevelUp =
-    QuestGen
-        (\game seed _extraData ->
-            { quest =
-                { title = "An Ocean Planet"
-                , requirements = [ QuestReq.init Stat.Blue 10 ]
-                , duration = Duration.Permanent
-                , completionEffects =
-                    [ CycleStartEffect.PlayerGetsPoints
-                        { stat = Stat.Blue
-                        , amount = 1
-                        , duration = Duration.Permanent
-                        }
-                    ]
-                , expirationEffects = []
-                , isRecurring = False
-                }
-            , randomSeed = seed
-            }
-        )
-
-
-purpleLevelUp : QuestGenerator
-purpleLevelUp =
-    QuestGen
-        (\game seed _extraData ->
-            { quest =
-                { title = "A Mire Planet"
-                , requirements = [ QuestReq.init Stat.Purple 10 ]
-                , duration = Duration.Permanent
-                , completionEffects =
-                    [ CycleStartEffect.PlayerGetsPoints
-                        { stat = Stat.Purple
-                        , amount = 1
-                        , duration = Duration.Permanent
-                        }
-                    ]
-                , expirationEffects = []
-                , isRecurring = False
-                }
-            , randomSeed = seed
-            }
-        )
-
-
-whiteLevelUp : QuestGenerator
-whiteLevelUp =
-    QuestGen
-        (\game seed _extraData ->
-            { quest =
-                { title = "A Desert Planet"
-                , requirements = [ QuestReq.init Stat.White 10 ]
-                , duration = Duration.Permanent
-                , completionEffects =
-                    [ CycleStartEffect.PlayerGetsPoints
-                        { stat = Stat.White
-                        , amount = 1
-                        , duration = Duration.Permanent
-                        }
-                    ]
-                , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = seed
             }
@@ -841,7 +693,6 @@ easyProcedural =
                         }
                     ]
                 , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = rewardAndSeed.seed
             }
@@ -901,7 +752,6 @@ mediumProcedural =
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects = rewards
                 , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = rewardAndSeed2.seed
             }
@@ -969,7 +819,6 @@ hardProcedural =
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = rewards
                 , expirationEffects = []
-                , isRecurring = False
                 }
             , randomSeed = rewardAndSeed3.seed
             }
@@ -1014,6 +863,155 @@ mediumWithHealing =
                 , completionEffects = Array.pushLast (CycleStartEffect.PlayerHeals { amount = 2 }) quest.completionEffects
                 }
             , randomSeed = questAndSeed.randomSeed
+            }
+        )
+
+
+hardWithMaxHpUp : QuestGenerator
+hardWithMaxHpUp =
+    QuestGen
+        (\game seed extraData ->
+            let
+                questAndSeed =
+                    generateQuest hardProcedural game seed extraData
+
+                quest =
+                    questAndSeed.quest
+            in
+            { quest =
+                { quest
+                | title = "Bionic Factory CEO Rescue " ++ romanNumeral game.player.level
+                , completionEffects = Array.pushLast (CycleStartEffect.PlayerMaxHPChanges { amount = 2 }) quest.completionEffects
+                }
+            , randomSeed = questAndSeed.randomSeed
+            }
+        )
+
+
+statChain1 : Stat -> QuestGenerator
+statChain1 stat =
+    QuestGen
+        (\game seed extraData ->
+            { quest =
+                { title = "Journey to the " ++ Stat.shape stat ++ " Nebula"
+                , requirements = [ QuestReq.init stat (game.player.level * 2) ]
+                , duration = Duration.Temp { cyclesLeft = 3 }
+                , completionEffects =
+                    [ CycleStartEffect.SpawnQuest
+                        { generatorId = "Stat Chain 2"
+                        , extraData = Stat.toString stat
+                        }
+                    ]
+                , expirationEffects = []
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+statChain2 : QuestGenerator
+statChain2 =
+    QuestGen
+        (\game seed extraData ->
+            let
+                stat =
+                    Stat.fromString extraData
+                        |> Maybe.withDefault Stat.White
+            in
+            { quest =
+                { title = "The Gooey " ++ Stat.shape stat ++ " Center"
+                , requirements = [ QuestReq.init stat (game.player.level * 5) ]
+                , duration = Duration.Temp { cyclesLeft = 5 }
+                , completionEffects =
+                    [ CycleStartEffect.SpawnQuest
+                        { generatorId = "Stat Chain 3"
+                        , extraData = extraData
+                        }
+                    ]
+                , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 3 } ]
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+statChain3 : QuestGenerator
+statChain3 =
+    QuestGen
+        (\game seed extraData ->
+            let
+                stat =
+                    Stat.fromString extraData
+                        |> Maybe.withDefault Stat.White
+            in
+            { quest =
+                { title = "Escape from the " ++ Stat.shape stat ++ " Event Horizon"
+                , requirements =
+                    Array.mapAndKeepJust
+                        (\stat_ ->
+                            if stat == stat_ then
+                                Nothing
+
+                            else
+                                Just (QuestReq.init stat_ (game.player.level * 2))
+                        )
+                        [ Stat.Pink, Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple, Stat.White ]
+                , duration = Duration.Temp { cyclesLeft = 6 }
+                , completionEffects =
+                    [ CycleStartEffect.SpawnQuest
+                        { generatorId = "Recurring Stat Pump"
+                        , extraData = extraData
+                        }
+                    ]
+                , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 5 } ]
+                }
+            , randomSeed = seed
+            }
+        )
+
+
+recurringStatPump : QuestGenerator
+recurringStatPump =
+    QuestGen
+        (\_game seed extraData ->
+            let
+                stat =
+                    Stat.fromString extraData
+                        |> Maybe.withDefault Stat.White
+
+                statAndSeed1 =
+                    Random.step (randomStat [ Stat.White ] []) seed
+
+                statAndSeed2 =
+                    Random.step (randomStat [ Stat.White ] []) statAndSeed1.seed
+            in
+            { quest =
+                { title = "Channel the " ++ Stat.shape stat ++ " Nebula"
+                , requirements =
+                    [ QuestReq.init statAndSeed1.value 1
+                    , QuestReq.init statAndSeed2.value 1
+                    ]
+                        |> collapseRequirements
+                , duration = Duration.Temp { cyclesLeft = 3 }
+                , completionEffects =
+                    [ CycleStartEffect.PlayerGetsPoints
+                        { stat = stat
+                        , amount = 3
+                        , duration = Duration.Temp { cyclesLeft = 2 }
+                        }
+                    , CycleStartEffect.SpawnQuest
+                        { generatorId = "Recurring Stat Pump"
+                        , extraData = extraData
+                        }
+                    ]
+                , expirationEffects =
+                    [ CycleStartEffect.SpawnQuest
+                        { generatorId = "Recurring Stat Pump"
+                        , extraData = extraData
+                        }
+                    ]
+                }
+            , randomSeed = statAndSeed2.seed
             }
         )
 

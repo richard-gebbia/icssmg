@@ -11,3 +11,81 @@ type Stat
     | Purple
     | White
     | Wild
+
+
+toString : Stat -> String
+toString stat =
+    when stat is
+        Pink ->
+            "pink"
+
+        Yellow ->
+            "yellow"
+
+        Green ->
+            "green"
+
+        Blue ->
+            "blue"
+
+        Purple ->
+            "purple"
+
+        White ->
+            "white"
+
+        Wild ->
+            "wild"
+
+
+fromString : String -> Maybe Stat
+fromString str =
+    when str is
+        "pink" ->
+            Just Pink
+
+        "yellow" ->
+            Just Yellow
+
+        "green" ->
+            Just Green
+
+        "blue" ->
+            Just Blue
+
+        "purple" ->
+            Just Purple
+
+        "white" ->
+            Just White
+
+        "wild" ->
+            Just Wild
+
+        _ ->
+            Nothing
+
+
+shape : Stat -> String
+shape stat =
+    when stat is
+        Pink ->
+            "Diamond"
+
+        Yellow ->
+            "Star"
+
+        Green ->
+            "Triangle"
+
+        Blue ->
+            "Square"
+
+        Purple ->
+            "Parallelogram"
+
+        White ->
+            "Circle"
+
+        Wild ->
+            "Blob"
