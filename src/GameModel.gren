@@ -77,6 +77,9 @@ init =
                 |> Dict.set "Stat Chain 2" statChain2
                 |> Dict.set "Stat Chain 3" statChain3
                 |> Dict.set "Recurring Stat Pump" recurringStatPump
+                |> Dict.set "Heal Chain 2" healChain2
+                |> Dict.set "Heal Chain 3" healChain3
+                |> Dict.set "Recurring Healing Pump" recurringHealingPump
         , generateQuestCounter = 0
         , numQuestsCompleted = 0
         }
@@ -268,8 +271,24 @@ nextCycleStartState gameModel =
             let
                 initState =
                     { quests = newQuests, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
+
+                questsThatDontCount =
+                    [ "Level Up"
+                    , "Recurring Stat Pump " ++ Stat.toString Stat.Pink
+                    , "Recurring Stat Pump " ++ Stat.toString Stat.Yellow
+                    , "Recurring Stat Pump " ++ Stat.toString Stat.Green
+                    , "Recurring Stat Pump " ++ Stat.toString Stat.Blue
+                    , "Recurring Stat Pump " ++ Stat.toString Stat.Purple
+                    , "Recurring Stat Pump " ++ Stat.toString Stat.White
+                    , "Recurring Healing Pump"
+                    ]
+
+                numQuestsThatCount =
+                    newQuests
+                        |> Dict.keepIf (\_ quest -> not (Array.member quest.id questsThatDontCount))
+                        |> Dict.count
             in
-            if Dict.count newQuests < 5 then
+            if numQuestsThatCount < 5 then
                 Array.foldl
                     (\_ { quests, randomSeed, ids } ->
                         let
@@ -282,7 +301,7 @@ nextCycleStartState gameModel =
                         }
                     )
                     initState
-                    (Array.range (Dict.count newQuests + 1) 5)
+                    (Array.range (numQuestsThatCount + 1) 5)
 
             else
                 initState
@@ -541,8 +560,8 @@ primaryQuestGenerator =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 38, value = easyProcedural }
-                        ([ { weight = 18, value = mediumProcedural }
+                        { weight = 37, value = easyProcedural }
+                        ([ { weight = 17, value = mediumProcedural }
                          , { weight = 8, value = hardProcedural }
                          , { weight = 8, value = easyWithDamage }
                          , { weight = 4, value = mediumWithHealing }
@@ -565,6 +584,12 @@ primaryQuestGenerator =
                             |> statChainOptionIf Stat.Blue
                             |> statChainOptionIf Stat.Purple
                             |> statChainOptionIf Stat.White
+                            |> optionIf { weight = 2, value = healChain1 }
+                                (questDoesntExist "Heal Chain 1"
+                                    || questDoesntExist "Heal Chain 2"
+                                    || questDoesntExist "Heal Chain 3"
+                                    || questDoesntExist "Recurring Healing Pump"
+                                )
                         )
 
                 questGenAndSeed =
@@ -1069,6 +1094,132 @@ recurringStatPump =
                 , expirationEffects =
                     [ CycleStartEffect.SpawnQuest
                         { generatorId = "Recurring Stat Pump"
+                        , extraData = extraData
+                        }
+                    ]
+                }
+            , randomSeed = statAndSeed2.seed
+            }
+        )
+
+
+healChain1 : QuestGenerator
+healChain1 =
+    QuestGen
+        (\game seed extraData ->
+            let
+                questAndSeed =
+                    generateQuest easyProcedural game seed extraData
+
+                quest =
+                    questAndSeed.quest
+            in
+            { quest =
+                { quest
+                | id = "Heal Chain 1"
+                , title = "Kiss My Boo-boo " ++ romanNumeral game.player.level
+                , completionEffects =
+                    Array.pushLast
+                        (CycleStartEffect.SpawnQuest
+                            { generatorId = "Heal Chain 2"
+                            , extraData = ""
+                            }
+                        )
+                        quest.completionEffects
+                }
+            , randomSeed = questAndSeed.randomSeed
+            }
+        )
+
+
+healChain2 : QuestGenerator
+healChain2 =
+    QuestGen
+        (\game seed extraData ->
+            let
+                questAndSeed =
+                    generateQuest mediumProcedural game seed extraData
+
+                quest =
+                    questAndSeed.quest
+            in
+            { quest =
+                { quest
+                | id = "Heal Chain 2"
+                , title = "Visit Me in Hospital " ++ romanNumeral game.player.level
+                , completionEffects =
+                    Array.pushLast
+                        (CycleStartEffect.SpawnQuest
+                            { generatorId = "Heal Chain 3"
+                            , extraData = ""
+                            }
+                        )
+                        quest.completionEffects
+                }
+            , randomSeed = questAndSeed.randomSeed
+            }
+        )
+
+
+healChain3 : QuestGenerator
+healChain3 =
+    QuestGen
+        (\game seed extraData ->
+            let
+                questAndSeed =
+                    generateQuest hardProcedural game seed extraData
+
+                quest =
+                    questAndSeed.quest
+            in
+            { quest =
+                { quest
+                | id = "Heal Chain 3"
+                , title = "Get Health Insurance " ++ romanNumeral game.player.level
+                , completionEffects =
+                    Array.pushLast
+                        (CycleStartEffect.SpawnQuest
+                            { generatorId = "Recurring Healing Pump"
+                            , extraData = ""
+                            }
+                        )
+                        quest.completionEffects
+                }
+            , randomSeed = questAndSeed.randomSeed
+            }
+        )
+
+
+recurringHealingPump : QuestGenerator
+recurringHealingPump =
+    QuestGen
+        (\game seed extraData ->
+            let
+                statAndSeed1 =
+                    Random.step (randomStat [ Stat.White ] []) seed
+
+                statAndSeed2 =
+                    Random.step (randomStat [ Stat.White ] []) statAndSeed1.seed
+            in
+            { quest =
+                { id = "Recurring Healing Pump"
+                , title = "Go to the Doctor"
+                , requirements =
+                    [ QuestReq.init statAndSeed1.value game.player.level
+                    , QuestReq.init statAndSeed2.value game.player.level
+                    ]
+                        |> collapseRequirements
+                , duration = Duration.Temp { cyclesLeft = 3 }
+                , completionEffects =
+                    [ CycleStartEffect.PlayerHeals { amount = 3 }
+                    , CycleStartEffect.SpawnQuest
+                        { generatorId = "Recurring Healing Pump"
+                        , extraData = extraData
+                        }
+                    ]
+                , expirationEffects =
+                    [ CycleStartEffect.SpawnQuest
+                        { generatorId = "Recurring Healing Pump"
                         , extraData = extraData
                         }
                     ]
