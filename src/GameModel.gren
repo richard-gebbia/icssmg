@@ -20,7 +20,7 @@ type alias GameModel =
     , randomSeed : Random.Seed
     , quests : Dict ID Quest
     , effects : Array CycleStartEffect
-    , primaryQuestGenerator : QuestGenerator
+    , primaryQuestGenerator : Dict ID Quest -> QuestGenerator
     , questGeneratorsByName : Dict String QuestGenerator
     , generateQuestCounter : Int
     , numQuestsCompleted : Int
@@ -60,11 +60,11 @@ init =
                     , requirements = [ QuestReq.init Stat.White 1 ]
                     , duration = Duration.Permanent
                     , completionEffects =
-                        [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
-                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 0 } }
+                        [ CycleStartEffect.PlayerGetsPoints { stat = Stat.Pink, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Yellow, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Green, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Blue, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
+                        , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
                         ]
                     , expirationEffects = []
                     }
@@ -101,32 +101,15 @@ nextCycleStartState gameModel =
         playerAtCycleStart =
             Player.nextCycleStartState gameModel.player
 
-        oldEffects : Array CycleStartEffect
-        oldEffects =
-            tentativeEffects gameModel
-
-        numQuestsCompletedThisCycle : Int
-        numQuestsCompletedThisCycle =
-            Dict.foldl
-                (\_ quest numCompleted ->
-                    if Quest.isCompleted quest then
-                        numCompleted + 1
-
-                    else
-                        numCompleted
-                )
-                0
-                gameModel.quests
-
-        newEffects : Array CycleStartEffect
-        newEffects =
+        effectsAfterTickingDown : Array CycleStartEffect
+        effectsAfterTickingDown =
             Array.mapAndKeepJust
                 (\effect ->
                     when effect is
                         CycleStartEffect.PlayerGetsPoints effect_ ->
                             when effect_.duration is
                                 Duration.Temp { cyclesLeft } ->
-                                    if cyclesLeft <= 0 then
+                                    if cyclesLeft <= 1 then
                                         Nothing
 
                                     else
@@ -155,7 +138,80 @@ nextCycleStartState gameModel =
                         CycleStartEffect.SpawnQuest _ ->
                             Nothing
                 )
-                oldEffects
+                gameModel.effects
+
+        effectsFromCompletedQuests : Array CycleStartEffect
+        effectsFromCompletedQuests =
+            Dict.foldl
+                (\_ quest effects ->
+                    if Quest.isCompleted quest then
+                        Array.append effects quest.completionEffects
+
+                    else
+                        effects
+                )
+                []
+                gameModel.quests
+
+        effectsFromQuestExpiration : Array CycleStartEffect
+        effectsFromQuestExpiration =
+            Dict.foldl
+                (\_ quest effects ->
+                    if not (Quest.isCompleted quest) then
+                        when quest.duration is
+                            Duration.Temp { cyclesLeft } ->
+                                if cyclesLeft <= 1 then
+                                    Array.append effects quest.expirationEffects
+
+                                else
+                                    effects
+
+                            Duration.Permanent ->
+                                effects
+
+                    else
+                        effects
+                )
+                []
+                gameModel.quests
+
+        newEffectsBeforeApplication : Array CycleStartEffect
+        newEffectsBeforeApplication =
+            Array.flatten
+                [ effectsAfterTickingDown
+                , effectsFromCompletedQuests
+                , effectsFromQuestExpiration
+                ]
+
+        numQuestsCompletedThisCycle : Int
+        numQuestsCompletedThisCycle =
+            Dict.foldl
+                (\_ quest numCompleted ->
+                    if Quest.isCompleted quest then
+                        numCompleted + 1
+
+                    else
+                        numCompleted
+                )
+                0
+                gameModel.quests
+
+        questsAfterTickingDown : Dict ID Quest
+        questsAfterTickingDown =
+            Dict.mapAndKeepJust
+                (\_ quest ->
+                    let
+                        newQuestAndIsStillThere : { quest : Quest, isStillThere : Bool }
+                        newQuestAndIsStillThere =
+                            Quest.nextCycleStartState quest
+                    in
+                    if newQuestAndIsStillThere.isStillThere then
+                        Just newQuestAndIsStillThere.quest
+
+                    else
+                        Nothing
+                )
+                gameModel.quests
 
         playerWithNewPointsAndLevel : Player
         playerWithNewPointsAndLevel =
@@ -181,7 +237,7 @@ nextCycleStartState gameModel =
                             playerIter
                 )
                 playerAtCycleStart
-                oldEffects
+                newEffectsBeforeApplication
                 |> Player.afterEffectsApplied
 
         spawnedQuestsAndRandomSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
@@ -213,13 +269,26 @@ nextCycleStartState gameModel =
                             questsAndSeedAndIds
                 )
                 { quests = Dict.empty, randomSeed = gameModel.randomSeed, ids = gameModel.ids }
-                oldEffects
+                newEffectsBeforeApplication
 
-        randomNewQuestAndSeedAndIds : Random.Seed -> Ids -> { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
-        randomNewQuestAndSeedAndIds randomSeed ids =
+        newEffects : Array CycleStartEffect
+        newEffects =
+            Array.keepIf
+                (\effect ->
+                    when effect is
+                        CycleStartEffect.PlayerGetsPoints _ ->
+                            True
+
+                        _ ->
+                            False
+                )
+                newEffectsBeforeApplication
+
+        randomNewQuestAndSeedAndIds : Dict ID Quest -> Random.Seed -> Ids -> { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
+        randomNewQuestAndSeedAndIds otherQuests randomSeed ids =
             let
                 questAndSeed =
-                    generateQuest gameModel.primaryQuestGenerator gameModel randomSeed ""
+                    generateQuest (gameModel.primaryQuestGenerator otherQuests) gameModel randomSeed ""
 
                 idAndIds : { id : ID, nextIds : Ids }
                 idAndIds =
@@ -242,35 +311,21 @@ nextCycleStartState gameModel =
                     spawnedQuestsAndRandomSeedAndIds.ids
             in
             if gameModel.generateQuestCounter == 0 then
-                randomNewQuestAndSeedAndIds randomSeed ids
+                randomNewQuestAndSeedAndIds spawnedQuestsAndRandomSeedAndIds.quests randomSeed ids
 
             else
                 { quests = Dict.empty, randomSeed = randomSeed, ids = ids }
 
-        newQuests : Dict ID Quest
-        newQuests =
-            gameModel.quests
-                |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
-                |> Dict.union newQuestForCycleAndIds.quests
-                |> Dict.mapAndKeepJust
-                    (\_ quest ->
-                        let
-                            newQuestAndIsStillThere : { quest : Quest, isStillThere : Bool }
-                            newQuestAndIsStillThere =
-                                Quest.nextCycleStartState quest
-                        in
-                        if newQuestAndIsStillThere.isStillThere then
-                            Just newQuestAndIsStillThere.quest
-
-                        else
-                            Nothing
-                    )
-
-        finalNewQuestsAndSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
-        finalNewQuestsAndSeedAndIds =
+        newQuestsAndSeedAndIds : { quests : Dict ID Quest, randomSeed : Random.Seed, ids : Ids }
+        newQuestsAndSeedAndIds =
             let
+                questsSoFar =
+                    questsAfterTickingDown
+                        |> Dict.union spawnedQuestsAndRandomSeedAndIds.quests
+                        |> Dict.union newQuestForCycleAndIds.quests
+
                 initState =
-                    { quests = newQuests, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
+                    { quests = questsSoFar, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
 
                 questsThatDontCount =
                     [ "Level Up"
@@ -284,7 +339,7 @@ nextCycleStartState gameModel =
                     ]
 
                 numQuestsThatCount =
-                    newQuests
+                    questsSoFar
                         |> Dict.keepIf (\_ quest -> not (Array.member quest.id questsThatDontCount))
                         |> Dict.count
             in
@@ -293,7 +348,7 @@ nextCycleStartState gameModel =
                     (\_ { quests, randomSeed, ids } ->
                         let
                             questsAndSeedAndId =
-                                randomNewQuestAndSeedAndIds randomSeed ids
+                                randomNewQuestAndSeedAndIds quests randomSeed ids
                         in
                         { quests = Dict.union quests questsAndSeedAndId.quests
                         , randomSeed = questsAndSeedAndId.randomSeed
@@ -308,12 +363,12 @@ nextCycleStartState gameModel =
     in
     { gameModel
     | player = playerWithNewPointsAndLevel
-    , quests = finalNewQuestsAndSeedAndIds.quests
+    , quests = newQuestsAndSeedAndIds.quests
     , cycle = gameModel.cycle + 1
     , effects = newEffects
-    , randomSeed = finalNewQuestsAndSeedAndIds.randomSeed
-    , ids = finalNewQuestsAndSeedAndIds.ids
-    , generateQuestCounter = Math.modBy 3 (gameModel.generateQuestCounter + 1)
+    , randomSeed = newQuestsAndSeedAndIds.randomSeed
+    , ids = newQuestsAndSeedAndIds.ids
+    , generateQuestCounter = Math.modBy 2 (gameModel.generateQuestCounter + 1)
     , numQuestsCompleted = gameModel.numQuestsCompleted + numQuestsCompletedThisCycle
     }
 
@@ -404,8 +459,8 @@ withPlayerRemovingAllPiontsFromQuestReq questId reqIdx stat gameModel =
     }
 
 
-pointsForStatNextCycle : Stat -> GameModel -> Int
-pointsForStatNextCycle stat gameModel =
+pointsForStatInNCycles : Int -> Stat -> GameModel -> Int
+pointsForStatInNCycles n stat gameModel =
     Array.foldl
         (\effect count ->
             when effect is
@@ -413,7 +468,7 @@ pointsForStatNextCycle stat gameModel =
                     if effect_.stat == stat then
                         when effect_.duration is
                             Duration.Temp { cyclesLeft } ->
-                                if 0 < cyclesLeft then
+                                if n + 1 <= cyclesLeft then
                                     count + effect_.amount
 
                                 else
@@ -428,7 +483,12 @@ pointsForStatNextCycle stat gameModel =
                 _ ->
                     count
         )
-        0
+        (if stat == Stat.Wild then
+            gameModel.player.level
+
+         else
+            0
+        )
         (tentativeEffects gameModel)
 
 
@@ -505,7 +565,23 @@ tentativeEffects { quests, effects } =
                             []
 
                 else
-                    quest.completionEffects
+                    Array.map
+                        (\effect ->
+                            when effect is
+                                CycleStartEffect.PlayerGetsPoints { stat, amount, duration } ->
+                                    -- for "showing next cycle" purposes, treat this effect as having
+                                    -- one higher duration (one extra for this current cycle)
+                                    when duration is
+                                        Duration.Temp { cyclesLeft } ->
+                                            CycleStartEffect.PlayerGetsPoints { stat = stat, amount = amount, duration = Duration.Temp { cyclesLeft = cyclesLeft + 1 } }
+
+                                        Duration.Permanent ->
+                                            effect
+
+                                _ ->
+                                    effect
+                        )
+                        quest.completionEffects
             )
             (Dict.values quests)
 
@@ -525,8 +601,8 @@ generateQuest questGen game seed extraData =
             g game seed extraData
 
 
-primaryQuestGenerator : QuestGenerator
-primaryQuestGenerator =
+primaryQuestGenerator : Dict ID Quest -> QuestGenerator
+primaryQuestGenerator otherQuests =
     QuestGen
         (\game seed _extraData ->
             let
@@ -540,7 +616,7 @@ primaryQuestGenerator =
 
                 questDoesntExist : String -> Bool
                 questDoesntExist id =
-                    Dict.values game.quests
+                    Dict.values (Dict.union game.quests otherQuests)
                         |> Array.any (\quest -> quest.id == id)
                         |> not
 
@@ -552,9 +628,9 @@ primaryQuestGenerator =
                     in
                     optionIf { weight = 1, value = statChain1 stat }
                         (questDoesntExist ("Stat Chain 1 " ++ statStr)
-                            || questDoesntExist ("Stat Chain 2 " ++ statStr)
-                            || questDoesntExist ("Stat Chain 3 " ++ statStr)
-                            || questDoesntExist ("Recurring Stat Pump " ++ statStr)
+                            && questDoesntExist ("Stat Chain 2 " ++ statStr)
+                            && questDoesntExist ("Stat Chain 3 " ++ statStr)
+                            && questDoesntExist ("Recurring Stat Pump " ++ statStr)
                         )
 
                 options : Random.Generator QuestGenerator
@@ -575,9 +651,9 @@ primaryQuestGenerator =
                          , { weight = 1, value = statLevelUp Stat.White "An Ice Planet" }
                          ]
                             |> optionIf { weight = 4, value = levelUpSpawner }
-                                (questDoesntExist "Level Up" || questDoesntExist "Level Up Spawner")
+                                (questDoesntExist "Level Up" && questDoesntExist "Level Up Spawner")
                             |> optionIf { weight = 1, value = levelUp }
-                                (questDoesntExist "Level Up" || questDoesntExist "Level Up Spawner")
+                                (questDoesntExist "Level Up" && questDoesntExist "Level Up Spawner")
                             |> statChainOptionIf Stat.Pink
                             |> statChainOptionIf Stat.Yellow
                             |> statChainOptionIf Stat.Green
@@ -586,9 +662,9 @@ primaryQuestGenerator =
                             |> statChainOptionIf Stat.White
                             |> optionIf { weight = 2, value = healChain1 }
                                 (questDoesntExist "Heal Chain 1"
-                                    || questDoesntExist "Heal Chain 2"
-                                    || questDoesntExist "Heal Chain 3"
-                                    || questDoesntExist "Recurring Healing Pump"
+                                    && questDoesntExist "Heal Chain 2"
+                                    && questDoesntExist "Heal Chain 3"
+                                    && questDoesntExist "Recurring Healing Pump"
                                 )
                         )
 
@@ -767,7 +843,7 @@ easyProcedural =
                     [ CycleStartEffect.PlayerGetsPoints
                         { stat = rewardAndSeed.value
                         , amount = game.player.level
-                        , duration = Duration.Temp { cyclesLeft = 1 }
+                        , duration = Duration.Temp { cyclesLeft = 2 }
                         }
                     ]
                 , expirationEffects = []
@@ -1340,19 +1416,19 @@ playerNextCycleStatsDesc : GameModel -> Array { stat : Stat, amount : Int }
 playerNextCycleStatsDesc gameModel =
     let
         pink =
-            pointsForStatNextCycle Stat.Pink gameModel
+            pointsForStatInNCycles 1 Stat.Pink gameModel
 
         yellow =
-            pointsForStatNextCycle Stat.Yellow gameModel
+            pointsForStatInNCycles 1 Stat.Yellow gameModel
 
         green =
-            pointsForStatNextCycle Stat.Green gameModel
+            pointsForStatInNCycles 1 Stat.Green gameModel
 
         blue =
-            pointsForStatNextCycle Stat.Blue gameModel
+            pointsForStatInNCycles 1 Stat.Blue gameModel
 
         purple =
-            pointsForStatNextCycle Stat.Purple gameModel
+            pointsForStatInNCycles 1 Stat.Purple gameModel
     in
     [ { stat = Stat.Pink, amount = pink }
     , { stat = Stat.Yellow, amount = yellow }
@@ -1365,11 +1441,19 @@ playerNextCycleStatsDesc gameModel =
 
 randomStat : Array Stat -> Array Stat -> Random.Generator Stat
 randomStat with without =
-    Random.uniform Stat.Pink
-        ([ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
-            |> Array.prepend with
-            |> Array.keepIf (\stat -> not (Array.member stat without))
-        )
+    let
+        fallback =
+            Random.uniform Stat.Pink [ Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
+
+        maybeFirstAndRest =
+            [ Stat.Pink, Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple ]
+                |> Array.prepend with
+                |> Array.keepIf (\stat -> not (Array.member stat without))
+                |> Array.popFirst
+    in
+    maybeFirstAndRest
+        |> Maybe.map (\{ first, rest } -> Random.uniform first rest)
+        |> Maybe.withDefault fallback
 
 
 collapseRequirements : Array QuestReq.Requirement -> Array QuestReq.Requirement

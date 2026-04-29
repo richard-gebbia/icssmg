@@ -136,7 +136,13 @@ withHpChanged amount player =
 withMaxHpChanged : Int -> Player -> Player
 withMaxHpChanged amount player =
     { player
-    | maxHP = player.maxHP + amount
+    | hp =
+        if amount < 0 then
+            player.hp
+
+        else
+            player.hp + amount
+    , maxHP = player.maxHP + amount
     }
 
 

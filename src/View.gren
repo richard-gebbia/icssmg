@@ -31,7 +31,7 @@ viewQuests { player, quests, numQuestsCompleted } isCommittingCycle =
             [ Html.text
                 ("Quests (Available: "
                     ++ String.fromInt (Dict.count quests)
-                    ++ ", Completed: "
+                    ++ ", Total Completed: "
                     ++ String.fromInt numQuestsCompleted
                     ++ ")"
                 )
@@ -434,22 +434,39 @@ viewPointsForStat gameModel stat =
     let
         pointsNextCycle : Int
         pointsNextCycle =
-            GameModel.pointsForStatNextCycle stat gameModel
+            GameModel.pointsForStatInNCycles 1 stat gameModel
+
+        pointsIn2Cycles : Int
+        pointsIn2Cycles =
+            GameModel.pointsForStatInNCycles 2 stat gameModel
+
+        pointsIn3Cycles : Int
+        pointsIn3Cycles =
+            GameModel.pointsForStatInNCycles 3 stat gameModel
     in
     viewPoints
         (imgForStat stat)
         (Player.pointsForStat stat gameModel.player)
         (Player.totalPointsForCycleForStat stat gameModel.player)
         pointsNextCycle
+        pointsIn2Cycles
+        pointsIn3Cycles
 
 
-viewPoints : String -> Int -> Int -> Int -> Array (Html msg)
-viewPoints imgSrc numLeftThisCycle totalThisCycle pointsNextCycle =
+viewPoints : String -> Int -> Int -> Int -> Int -> Int -> Array (Html msg)
+viewPoints imgSrc numLeftThisCycle totalThisCycle pointsNextCycle pointsIn2Cycles pointsIn3Cycles =
+    let
+        viewBonusPoints : Int -> Html msg
+        viewBonusPoints points =
+            Html.div
+                [ HtmlAttrs.classList [ { class = "bonus-next-cycle", enabled = 0 < points } ] ]
+                [ Html.text ("(" ++ String.fromInt points ++ ")") ]
+    in
     [ Html.img [ HtmlAttrs.src imgSrc, HtmlAttrs.width 32, HtmlAttrs.height 32 ] []
     , Html.div [] [ Html.text (String.fromInt numLeftThisCycle) ]
     , Html.div [] [ Html.text "/" ]
     , Html.div [] [ Html.text (String.fromInt totalThisCycle) ]
-    , Html.div
-        [ HtmlAttrs.classList [ { class = "bonus-next-cycle", enabled = 0 < pointsNextCycle } ] ]
-        [ Html.text ("(+" ++ String.fromInt pointsNextCycle ++ ")") ]
+    , viewBonusPoints pointsNextCycle
+    , viewBonusPoints pointsIn2Cycles
+    , viewBonusPoints pointsIn3Cycles
     ]

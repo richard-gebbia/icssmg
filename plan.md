@@ -24,7 +24,8 @@
 - [X] Generate initial seed
 - [X] Expiration effects
 - [X] Content!
-- [ ] Display three turns worth of stat boosts (fix bug where it only shows stat boosts from this cycle)
+- [ ] Display three turns worth of stat boosts
+- [ ] Off-by-one bug: effects last 1 more cycle than they should, though before their last cycle it's not displayed in the "next cycle" counter
 - [X] Maybe consider a way to convert one stat to another at a really bad exchange rate (easy quests kinda facilitate this)
 - [ ] Maybe consider a recycle quest button
 - [X] Prevent another Level Up or Spawner from showing up if there's already one
@@ -115,3 +116,15 @@ Two panes, horizontally laid out:
 - Content cadence
     - 1 new quest every ~3 cycles
     - don't make a new quest if the player is already dealing with 10 or more
+
+## Effect resolution
+- Upon clicking "Next Cycle", this happens in order:
+    - the player resets all their points to zero
+    - all effects from the previous cycle tick down, those that are at 0 go away
+    - collect any effects from quests completed last cycle
+    - collect any effects from quests that are at 1 cycle to go, have expiration effects, and aren't completed
+    - quest durations tick down, those that are at 0 go away
+    - apply all previous effects that haven't gone away and all collected effects to the player
+    - spawn any new quests from effects
+    - if it's time to add a new quest, generate a new quest
+    - if we're still at < 5 quests, generate quests up to the 5 minimum
