@@ -636,10 +636,10 @@ primaryQuestGenerator otherQuests =
                 options : Random.Generator QuestGenerator
                 options =
                     Random.weighted
-                        { weight = 37, value = easyProcedural }
-                        ([ { weight = 17, value = mediumProcedural }
+                        { weight = 38, value = easyProcedural }
+                        ([ { weight = 18, value = mediumProcedural }
                          , { weight = 8, value = hardProcedural }
-                         , { weight = 8, value = easyWithDamage }
+                         , { weight = 6, value = easyWithDamage }
                          , { weight = 4, value = mediumWithHealing }
                          , { weight = 4, value = hardWithMaxHpUp }
                          , { weight = 4, value = fuckAround }
@@ -682,7 +682,7 @@ levelUp =
             { quest =
                 { id = "Level Up"
                 , title = "Level Up " ++ romanNumeral game.player.level
-                , requirements = [ QuestReq.init Stat.White (2 ^ game.player.level) ]
+                , requirements = [ QuestReq.init Stat.White (2 ^ (game.player.level - 1)) ]
                 , duration = Duration.Permanent
                 , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
                 , expirationEffects = []

@@ -42,13 +42,14 @@ body {
     color: var(--white);
     font-size: 16pt;
     font-family: "Anta", monospace;
+    margin: 0;
 }
 
 main {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 2rem;
+    /* justify-content: center; */
+    /* align-items: center; */
+    /* padding: 2rem; */
 }
 
 h2 {
@@ -86,8 +87,8 @@ hr {
 .game {
     width: 1600px;
     height: 900px;
-    border: 4px var(--white) solid;
-    border-radius: 16px;
+    /* border: 4px var(--white) solid; */
+    /* border-radius: 16px; */
     display: flex;
     background-color: var(--purple-6);
 }
