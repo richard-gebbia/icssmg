@@ -67,6 +67,7 @@ init =
                         , CycleStartEffect.PlayerGetsPoints { stat = Stat.Purple, amount = 1, duration = Duration.Temp { cyclesLeft = 1 } }
                         ]
                     , expirationEffects = []
+                    , spawner = Nothing
                     }
         , effects = []
         , primaryQuestGenerator = primaryQuestGenerator
@@ -245,14 +246,14 @@ nextCycleStartState gameModel =
             Array.foldl
                 (\effect questsAndSeedAndIds ->
                     when effect is
-                        CycleStartEffect.SpawnQuest { generatorId, extraData } ->
+                        CycleStartEffect.SpawnQuest { generatorId, spawner, extraData } ->
                             Dict.get generatorId gameModel.questGeneratorsByName
                                 |> Maybe.map
                                     (\questGen ->
                                         let
                                             questAndSeed : { quest : Quest, randomSeed : Random.Seed }
                                             questAndSeed =
-                                                generateQuest questGen gameModel questsAndSeedAndIds.randomSeed extraData
+                                                generateQuest questGen gameModel questsAndSeedAndIds.randomSeed (Just spawner) extraData
 
                                             idAndIds : { id : ID, nextIds : Ids }
                                             idAndIds =
@@ -288,7 +289,7 @@ nextCycleStartState gameModel =
         randomNewQuestAndSeedAndIds otherQuests randomSeed ids =
             let
                 questAndSeed =
-                    generateQuest (gameModel.primaryQuestGenerator otherQuests) gameModel randomSeed ""
+                    generateQuest (gameModel.primaryQuestGenerator otherQuests) gameModel randomSeed Nothing ""
 
                 idAndIds : { id : ID, nextIds : Ids }
                 idAndIds =
@@ -591,20 +592,20 @@ tentativeEffects { quests, effects } =
 
 
 type QuestGenerator
-    = QuestGen (GameModel -> Random.Seed -> String -> { quest : Quest, randomSeed : Random.Seed })
+    = QuestGen (GameModel -> Random.Seed -> Maybe String -> String -> { quest : Quest, randomSeed : Random.Seed })
 
 
-generateQuest : QuestGenerator -> GameModel -> Random.Seed -> String -> { quest : Quest, randomSeed : Random.Seed }
-generateQuest questGen game seed extraData =
+generateQuest : QuestGenerator -> GameModel -> Random.Seed -> Maybe String -> String -> { quest : Quest, randomSeed : Random.Seed }
+generateQuest questGen game seed spawner extraData =
     when questGen is
         QuestGen g ->
-            g game seed extraData
+            g game seed spawner extraData
 
 
 primaryQuestGenerator : Dict ID Quest -> QuestGenerator
 primaryQuestGenerator otherQuests =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             let
                 optionIf : a -> Bool -> Array a -> Array a
                 optionIf x pred arr =
@@ -671,14 +672,14 @@ primaryQuestGenerator otherQuests =
                 questGenAndSeed =
                     Random.step options seed
             in
-            generateQuest questGenAndSeed.value game questGenAndSeed.seed ""
+            generateQuest questGenAndSeed.value game questGenAndSeed.seed spawner ""
         )
 
 
 levelUp : QuestGenerator
 levelUp =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             { quest =
                 { id = "Level Up"
                 , title = "Level Up " ++ romanNumeral game.player.level
@@ -686,6 +687,7 @@ levelUp =
                 , duration = Duration.Permanent
                 , completionEffects = [ CycleStartEffect.PlayerLevelsUp ]
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -695,10 +697,14 @@ levelUp =
 levelUpSpawner : QuestGenerator
 levelUpSpawner =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
+            let
+                title =
+                    "Venture into the Unknown " ++ romanNumeral game.player.level
+            in
             { quest =
                 { id = "Level Up Spawner"
-                , title = "Venture into the Unknown " ++ romanNumeral game.player.level
+                , title = title
                 , requirements =
                     [ QuestReq.init Stat.Pink game.player.level
                     , QuestReq.init Stat.Yellow game.player.level
@@ -707,8 +713,9 @@ levelUpSpawner =
                     , QuestReq.init Stat.Purple game.player.level
                     ]
                 , duration = Duration.Temp { cyclesLeft = 7 }
-                , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up", extraData = "" } ]
+                , completionEffects = [ CycleStartEffect.SpawnQuest { generatorId = "Level Up", spawner = title, extraData = "" } ]
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -718,8 +725,11 @@ levelUpSpawner =
 fuckAround : QuestGenerator
 fuckAround =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             let
+                title =
+                    "Nagging Curiosity " ++ romanNumeral game.player.level
+
                 statAndSeed1 =
                     Random.step (randomStat [] []) seed
 
@@ -738,15 +748,16 @@ fuckAround =
             in
             { quest =
                 { id = "Fuck Around"
-                , title = "Nagging Curiosity " ++ romanNumeral game.player.level
+                , title = title
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
-                    [ CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = Stat.toString statAndSeed1.value }
-                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = Stat.toString statAndSeed2.value }
-                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", extraData = Stat.toString statAndSeed3.value }
+                    [ CycleStartEffect.SpawnQuest { generatorId = "Find Out", spawner = title, extraData = Stat.toString statAndSeed1.value }
+                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", spawner = title, extraData = Stat.toString statAndSeed2.value }
+                    , CycleStartEffect.SpawnQuest { generatorId = "Find Out", spawner = title, extraData = Stat.toString statAndSeed3.value }
                     ]
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = statAndSeed3.seed
             }
@@ -756,7 +767,7 @@ fuckAround =
 findOut : QuestGenerator
 findOut =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
                 stat : Stat
                 stat =
@@ -777,6 +788,7 @@ findOut =
                     , CycleStartEffect.PlayerGetsPoints { stat = Stat.White, amount = game.player.level, duration = Duration.Temp { cyclesLeft = 2 } }
                     ]
                 , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 2 } ]
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -786,11 +798,11 @@ findOut =
 statLevelUp : Stat -> String -> QuestGenerator
 statLevelUp stat title =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             { quest =
                 { id = "Stat Level Up"
                 , title = title
-                , requirements = [ QuestReq.init stat 10 ]
+                , requirements = [ QuestReq.init stat 6 ]
                 , duration = Duration.Permanent
                 , completionEffects =
                     [ CycleStartEffect.PlayerGetsPoints
@@ -800,6 +812,7 @@ statLevelUp stat title =
                         }
                     ]
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -809,7 +822,7 @@ statLevelUp stat title =
 easyProcedural : QuestGenerator
 easyProcedural =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             let
                 titleAndSeed =
                     Random.step randomSciFiQuestNames seed
@@ -847,6 +860,7 @@ easyProcedural =
                         }
                     ]
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = rewardAndSeed.seed
             }
@@ -856,7 +870,7 @@ easyProcedural =
 mediumProcedural : QuestGenerator
 mediumProcedural =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             let
                 titleAndSeed =
                     Random.step randomSciFiQuestNames seed
@@ -907,6 +921,7 @@ mediumProcedural =
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects = rewards
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = rewardAndSeed2.seed
             }
@@ -916,7 +931,7 @@ mediumProcedural =
 hardProcedural : QuestGenerator
 hardProcedural =
     QuestGen
-        (\game seed _extraData ->
+        (\game seed spawner _extraData ->
             let
                 titleAndSeed =
                     Random.step randomSciFiQuestNames seed
@@ -975,6 +990,7 @@ hardProcedural =
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = rewards
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = rewardAndSeed3.seed
             }
@@ -984,10 +1000,10 @@ hardProcedural =
 easyWithDamage : QuestGenerator
 easyWithDamage =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
                 questAndSeed =
-                    generateQuest easyProcedural game seed extraData
+                    generateQuest easyProcedural game seed spawner extraData
 
                 quest =
                     questAndSeed.quest
@@ -997,6 +1013,7 @@ easyWithDamage =
                 | id = "Easy with Damage"
                 , title = "Fire Ants But They're Aliens " ++ romanNumeral game.player.level
                 , expirationEffects = Array.pushLast (CycleStartEffect.PlayerTakesDamage { amount = 1 }) quest.expirationEffects
+                , spawner = spawner
                 }
             , randomSeed = questAndSeed.randomSeed
             }
@@ -1006,10 +1023,10 @@ easyWithDamage =
 mediumWithHealing : QuestGenerator
 mediumWithHealing =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
                 questAndSeed =
-                    generateQuest mediumProcedural game seed extraData
+                    generateQuest mediumProcedural game seed spawner extraData
 
                 quest =
                     questAndSeed.quest
@@ -1019,6 +1036,7 @@ mediumWithHealing =
                 | id = "Medium with Healing"
                 , title = "Holo-Cantina Setup/Teardown " ++ romanNumeral game.player.level
                 , completionEffects = Array.pushLast (CycleStartEffect.PlayerHeals { amount = 2 }) quest.completionEffects
+                , spawner = spawner
                 }
             , randomSeed = questAndSeed.randomSeed
             }
@@ -1028,10 +1046,10 @@ mediumWithHealing =
 hardWithMaxHpUp : QuestGenerator
 hardWithMaxHpUp =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
                 questAndSeed =
-                    generateQuest hardProcedural game seed extraData
+                    generateQuest hardProcedural game seed spawner extraData
 
                 quest =
                     questAndSeed.quest
@@ -1041,6 +1059,7 @@ hardWithMaxHpUp =
                 | id = "Hard with Max HP Up"
                 , title = "Bionic Factory CEO Rescue " ++ romanNumeral game.player.level
                 , completionEffects = Array.pushLast (CycleStartEffect.PlayerMaxHPChanges { amount = 2 }) quest.completionEffects
+                , spawner = spawner
                 }
             , randomSeed = questAndSeed.randomSeed
             }
@@ -1050,19 +1069,25 @@ hardWithMaxHpUp =
 statChain1 : Stat -> QuestGenerator
 statChain1 stat =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
+            let
+                title =
+                    "Journey to the " ++ Stat.shape stat ++ " Nebula"
+            in
             { quest =
                 { id = "Stat Chain 1 " ++ Stat.toString stat
-                , title = "Journey to the " ++ Stat.shape stat ++ " Nebula"
+                , title = title
                 , requirements = [ QuestReq.init stat (game.player.level * 2) ]
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
                     [ CycleStartEffect.SpawnQuest
                         { generatorId = "Stat Chain 2"
+                        , spawner = title
                         , extraData = Stat.toString stat
                         }
                     ]
                 , expirationEffects = []
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -1072,24 +1097,29 @@ statChain1 stat =
 statChain2 : QuestGenerator
 statChain2 =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
                 stat =
                     Stat.fromString extraData
                         |> Maybe.withDefault Stat.White
+
+                title =
+                    "The Gooey " ++ Stat.shape stat ++ " Center"
             in
             { quest =
                 { id = "Stat Chain 2 " ++ Stat.toString stat
-                , title = "The Gooey " ++ Stat.shape stat ++ " Center"
+                , title = title
                 , requirements = [ QuestReq.init stat (game.player.level * 5) ]
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects =
                     [ CycleStartEffect.SpawnQuest
                         { generatorId = "Stat Chain 3"
+                        , spawner = title
                         , extraData = extraData
                         }
                     ]
                 , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 3 } ]
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -1099,15 +1129,18 @@ statChain2 =
 statChain3 : QuestGenerator
 statChain3 =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
                 stat =
                     Stat.fromString extraData
                         |> Maybe.withDefault Stat.White
+
+                title =
+                    "Escape from the " ++ Stat.shape stat ++ " Event Horizon"
             in
             { quest =
                 { id = "Stat Chain 3 " ++ Stat.toString stat
-                , title = "Escape from the " ++ Stat.shape stat ++ " Event Horizon"
+                , title = title
                 , requirements =
                     Array.mapAndKeepJust
                         (\stat_ ->
@@ -1122,10 +1155,12 @@ statChain3 =
                 , completionEffects =
                     [ CycleStartEffect.SpawnQuest
                         { generatorId = "Recurring Stat Pump"
+                        , spawner = title
                         , extraData = extraData
                         }
                     ]
                 , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 5 } ]
+                , spawner = spawner
                 }
             , randomSeed = seed
             }
@@ -1135,11 +1170,14 @@ statChain3 =
 recurringStatPump : QuestGenerator
 recurringStatPump =
     QuestGen
-        (\_game seed extraData ->
+        (\_game seed spawner extraData ->
             let
                 stat =
                     Stat.fromString extraData
                         |> Maybe.withDefault Stat.White
+
+                title =
+                    "Channel the " ++ Stat.shape stat ++ " Nebula"
 
                 statAndSeed1 =
                     Random.step (randomStat [ Stat.White ] []) seed
@@ -1149,7 +1187,7 @@ recurringStatPump =
             in
             { quest =
                 { id = "Recurring Stat Pump " ++ Stat.toString stat
-                , title = "Channel the " ++ Stat.shape stat ++ " Nebula"
+                , title = title
                 , requirements =
                     [ QuestReq.init statAndSeed1.value 1
                     , QuestReq.init statAndSeed2.value 1
@@ -1164,15 +1202,18 @@ recurringStatPump =
                         }
                     , CycleStartEffect.SpawnQuest
                         { generatorId = "Recurring Stat Pump"
+                        , spawner = title
                         , extraData = extraData
                         }
                     ]
                 , expirationEffects =
                     [ CycleStartEffect.SpawnQuest
                         { generatorId = "Recurring Stat Pump"
+                        , spawner = title
                         , extraData = extraData
                         }
                     ]
+                , spawner = spawner
                 }
             , randomSeed = statAndSeed2.seed
             }
@@ -1182,10 +1223,13 @@ recurringStatPump =
 healChain1 : QuestGenerator
 healChain1 =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
+                title =
+                    "Kiss My Boo-boo " ++ romanNumeral game.player.level
+
                 questAndSeed =
-                    generateQuest easyProcedural game seed extraData
+                    generateQuest easyProcedural game seed spawner extraData
 
                 quest =
                     questAndSeed.quest
@@ -1193,15 +1237,17 @@ healChain1 =
             { quest =
                 { quest
                 | id = "Heal Chain 1"
-                , title = "Kiss My Boo-boo " ++ romanNumeral game.player.level
+                , title = title
                 , completionEffects =
                     Array.pushLast
                         (CycleStartEffect.SpawnQuest
                             { generatorId = "Heal Chain 2"
+                            , spawner = title
                             , extraData = ""
                             }
                         )
                         quest.completionEffects
+                , spawner = spawner
                 }
             , randomSeed = questAndSeed.randomSeed
             }
@@ -1211,10 +1257,13 @@ healChain1 =
 healChain2 : QuestGenerator
 healChain2 =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
+                title =
+                    "Visit Me in Hospital " ++ romanNumeral game.player.level
+
                 questAndSeed =
-                    generateQuest mediumProcedural game seed extraData
+                    generateQuest mediumProcedural game seed spawner extraData
 
                 quest =
                     questAndSeed.quest
@@ -1222,15 +1271,17 @@ healChain2 =
             { quest =
                 { quest
                 | id = "Heal Chain 2"
-                , title = "Visit Me in Hospital " ++ romanNumeral game.player.level
+                , title = title
                 , completionEffects =
                     Array.pushLast
                         (CycleStartEffect.SpawnQuest
                             { generatorId = "Heal Chain 3"
+                            , spawner = title
                             , extraData = ""
                             }
                         )
                         quest.completionEffects
+                , spawner = spawner
                 }
             , randomSeed = questAndSeed.randomSeed
             }
@@ -1240,10 +1291,13 @@ healChain2 =
 healChain3 : QuestGenerator
 healChain3 =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
+                title =
+                    "Get Health Insurance " ++ romanNumeral game.player.level
+
                 questAndSeed =
-                    generateQuest hardProcedural game seed extraData
+                    generateQuest hardProcedural game seed spawner extraData
 
                 quest =
                     questAndSeed.quest
@@ -1251,15 +1305,17 @@ healChain3 =
             { quest =
                 { quest
                 | id = "Heal Chain 3"
-                , title = "Get Health Insurance " ++ romanNumeral game.player.level
+                , title = title
                 , completionEffects =
                     Array.pushLast
                         (CycleStartEffect.SpawnQuest
                             { generatorId = "Recurring Healing Pump"
+                            , spawner = title
                             , extraData = ""
                             }
                         )
                         quest.completionEffects
+                , spawner = spawner
                 }
             , randomSeed = questAndSeed.randomSeed
             }
@@ -1269,8 +1325,11 @@ healChain3 =
 recurringHealingPump : QuestGenerator
 recurringHealingPump =
     QuestGen
-        (\game seed extraData ->
+        (\game seed spawner extraData ->
             let
+                title =
+                    "Go to the Doctor"
+
                 statAndSeed1 =
                     Random.step (randomStat [ Stat.White ] []) seed
 
@@ -1279,7 +1338,7 @@ recurringHealingPump =
             in
             { quest =
                 { id = "Recurring Healing Pump"
-                , title = "Go to the Doctor"
+                , title = title
                 , requirements =
                     [ QuestReq.init statAndSeed1.value game.player.level
                     , QuestReq.init statAndSeed2.value game.player.level
@@ -1290,15 +1349,18 @@ recurringHealingPump =
                     [ CycleStartEffect.PlayerHeals { amount = 3 }
                     , CycleStartEffect.SpawnQuest
                         { generatorId = "Recurring Healing Pump"
+                        , spawner = title
                         , extraData = extraData
                         }
                     ]
                 , expirationEffects =
                     [ CycleStartEffect.SpawnQuest
                         { generatorId = "Recurring Healing Pump"
+                        , spawner = title
                         , extraData = extraData
                         }
                     ]
+                , spawner = spawner
                 }
             , randomSeed = statAndSeed2.seed
             }

@@ -32,6 +32,10 @@
 - [X] Display the number of quests at the top
 - [X] Display number of quests completed
 - [X] Easy and medium quests should always return a stat that they don't take, this makes them poor but useful conversions
+- [X] Change "on expiration" language to "when this goes away"
+- [X] Find a way to show what spawned a quest
+- [ ] Weight upcoming and potentially partially-filled quest rewards
+- [X] Possibly lower the cost for permanent stat upgrades
 - [ ] Find minimal repro for a bug with Gren formatter
 
 # UI
@@ -128,3 +132,18 @@ Two panes, horizontally laid out:
     - spawn any new quests from effects
     - if it's time to add a new quest, generate a new quest
     - if we're still at < 5 quests, generate quests up to the 5 minimum
+
+
+## Feedback
+Stephen:
+- game is decently fun once you get into a groove
+- it can get a little impossible at higher levels
+- you sometimes get boned; the weighting to determine new quest inputs isn't strong enough
+- "you can get stuck in a cycle where you're getting Channel quests for the nebulae you've completed over and over, and it sorta shoehorns what resources you have available in larger amounts"
+- the stat level up quests are (maybe) a bait
+- "on expiration" verbiage not clear
+- quest was spawned from what not clear
+
+Victor:
+- strategy to play the game is too simple
+- game is a 1-2 out of 10, only sees 4/10 potential

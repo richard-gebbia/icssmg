@@ -64,7 +64,9 @@ viewQuest player isCommittingCycle questId quest =
                             "QUEST COMPLETED!"
 
                          else
-                            quest.title
+                            quest.spawner
+                                |> Maybe.map (\spawner -> quest.title ++ " (spawned by " ++ spawner ++ ")")
+                                |> Maybe.withDefault quest.title
                         )
                     ]
                 , Html.div [ HtmlAttrs.class "pips" ]
@@ -95,7 +97,7 @@ viewQuest player isCommittingCycle questId quest =
 
                   else
                     Html.div [ HtmlAttrs.class "consequences-section" ]
-                        [ Html.b [] [ Html.text "On expiration:" ]
+                        [ Html.b [] [ Html.text "When this goes away without being completed:" ]
                         , Html.ul []
                             (Array.map viewEffectListItem quest.expirationEffects)
                         ]

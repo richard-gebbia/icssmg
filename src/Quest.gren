@@ -13,6 +13,7 @@ type alias Quest =
     , duration : Duration
     , completionEffects : Array CycleStartEffect
     , expirationEffects : Array CycleStartEffect
+    , spawner : Maybe String
     }
 
 
