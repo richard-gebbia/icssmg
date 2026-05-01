@@ -103,7 +103,7 @@ nextCycleStartState gameModel =
     let
         playerAtCycleStart : Player
         playerAtCycleStart =
-            Player.nextCycleStartState gameModel.player
+            player
 
         effectsAfterTickingDown : Array CycleStartEffect
         effectsAfterTickingDown =
