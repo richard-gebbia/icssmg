@@ -810,16 +810,25 @@ easyProcedural =
                         |> Maybe.map (\{ first, rest } -> Random.weighted (toRandomWeight first) (Array.map toRandomWeight rest))
                         |> Maybe.withDefault (randomStat [] [])
 
-                statAndSeed =
+                statAndSeed1 =
                     Random.step weightedStatGenerator titleAndSeed.seed
 
+                statAndSeed2 =
+                    Random.step weightedStatGenerator statAndSeed1.seed
+
+                requirements =
+                    collapseRequirements
+                        [ QuestReq.init statAndSeed1.value game.player.level
+                        , QuestReq.init statAndSeed2.value game.player.level
+                        ]
+
                 rewardAndSeed =
-                    Random.step (randomStat [] [ statAndSeed.value ]) statAndSeed.seed
+                    Random.step (randomStat [] [ statAndSeed1.value, statAndSeed2.value ]) statAndSeed2.seed
             in
             { quest =
                 { id = "Easy Procedural"
                 , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
-                , requirements = [ QuestReq.init statAndSeed.value (game.player.level * 2) ]
+                , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
                     [ CycleStartEffect.PlayerGetsPoints
