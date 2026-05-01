@@ -48,6 +48,11 @@ init =
             , purpleTotalForCycle = 0
             , whiteTotalForCycle = 1
             , wildTotalForCycle = 1
+            , wildExchangeSlot1 = Nothing
+            , wildExchangeSlot2 = Nothing
+            , wildExchangeSlot3 = Nothing
+            , wildExchangeSlot4 = Nothing
+            , exchangedWilds = []
             }
         , cycle = 1
         , ids = Ids.init
@@ -585,6 +590,27 @@ tentativeEffects { quests, effects } =
                         quest.completionEffects
             )
             (Dict.values quests)
+
+
+withWildExchangeSlotSelected : Player.WildExchangeSlot -> Maybe Stat -> GameModel -> GameModel
+withWildExchangeSlotSelected slot stat gameModel =
+    { gameModel
+    | player = Player.withStatSelectedInWildExchangeSlot slot stat gameModel.player
+    }
+
+
+withWildExchanged : GameModel -> GameModel
+withWildExchanged gameModel =
+    { gameModel
+    | player = Player.withWildExchanged gameModel.player
+    }
+
+
+withLastWildExchangeUndone : GameModel -> GameModel
+withLastWildExchangeUndone gameModel =
+    { gameModel
+    | player = Player.withWildExchangeUndone gameModel.player
+    }
 
 
 
@@ -1150,7 +1176,7 @@ statChain3 =
                             else
                                 Just (QuestReq.init stat_ (game.player.level * 2))
                         )
-                        [ Stat.Pink, Stat.Yellow, Stat.Green, Stat.Blue, Stat.Purple, Stat.White ]
+                        Stat.allBasicStats
                 , duration = Duration.Temp { cyclesLeft = 6 }
                 , completionEffects =
                     [ CycleStartEffect.SpawnQuest

@@ -9,6 +9,7 @@ import Html.Attributes as HtmlAttrs
 import Html.Events as HtmlEvents
 import Html.Keyed as HtmlKeyed
 import Ids exposing (ID)
+import Json.Decode as JsonDecode
 import Msg exposing (Msg)
 import Player exposing (Player)
 import Quest exposing (Quest)
@@ -413,6 +414,30 @@ viewPlayerInfo gameModel isCommittingCycle =
                     , Stat.Wild
                     ]
                 )
+            , Html.section [ HtmlAttrs.class "wild-exchange" ]
+                ([ Html.div [] [ Html.text "Wild exchange:" ] ]
+                    ++ [ Html.div []
+                            (Array.map (viewWildExchangeSlot gameModel.player)
+                                [ Player.WildExchangeSlot1
+                                , Player.WildExchangeSlot2
+                                , Player.WildExchangeSlot3
+                                , Player.WildExchangeSlot4
+                                ]
+                            )
+                       , Html.div []
+                            [ Html.button
+                                [ HtmlAttrs.disabled (not (Player.canExchangeForWild gameModel.player))
+                                , HtmlEvents.onClick Msg.WildExchanged
+                                ]
+                                [ Html.text "Exchange" ]
+                            , Html.button
+                                [ HtmlAttrs.disabled (not (Player.canUndoLastWildExchange gameModel.player))
+                                , HtmlEvents.onClick Msg.LastWildExchangeUndone
+                                ]
+                                [ Html.text "Undo" ]
+                            ]
+                       ]
+                )
             ]
         , Html.button
             [ HtmlAttrs.type_ "button"
@@ -472,3 +497,45 @@ viewPoints imgSrc numLeftThisCycle totalThisCycle pointsNextCycle pointsIn2Cycle
     , viewBonusPoints pointsIn2Cycles
     , viewBonusPoints pointsIn3Cycles
     ]
+
+
+viewWildExchangeSlot : Player -> Player.WildExchangeSlot -> Html Msg
+viewWildExchangeSlot player slot =
+    let
+        options : Array (Maybe Stat)
+        options =
+            Player.optionsForWildExchangeSlot slot player
+
+        viewOption : Maybe Stat -> Html Msg
+        viewOption maybeStat =
+            when maybeStat is
+                Nothing ->
+                    Html.option
+                        [ HtmlAttrs.value "-"
+                        , HtmlAttrs.selected (Player.wildExchangeSlot slot player == maybeStat)
+                        ]
+                        [ Html.text "-" ]
+
+                Just stat ->
+                    Html.option
+                        [ HtmlAttrs.class ("wild-exchange-option-" ++ Stat.toString stat)
+                        , HtmlAttrs.value (Stat.toString stat)
+                        , HtmlAttrs.selected (Player.wildExchangeSlot slot player == maybeStat)
+                        ]
+                        [ Html.text (Stat.toString stat) ]
+
+        valueDecoder : JsonDecode.Decoder (Maybe Stat)
+        valueDecoder =
+            JsonDecode.string
+                |> JsonDecode.map Stat.fromString
+    in
+    Html.select
+        [ HtmlEvents.onInput
+            (\str ->
+                Msg.WildExchangeSlotSelected
+                    { slot = slot
+                    , stat = Stat.fromString str
+                    }
+            )
+        ]
+        (Array.map viewOption options)

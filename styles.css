@@ -276,7 +276,7 @@ hr {
 .player-info-panel-top-section {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 .player-info-line {
@@ -295,4 +295,34 @@ hr {
     padding-top: 1rem;
     padding-bottom: 1rem;
     justify-self: end;
+}
+
+.wild-exchange {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.wild-exchange-option-pink {
+    color: var(--pink);
+}
+
+.wild-exchange-option-yellow {
+    color: var(--yellow-1);
+}
+
+.wild-exchange-option-green {
+    color: var(--green-1);
+}
+
+.wild-exchange-option-blue {
+    color: var(--blue-3);
+}
+
+.wild-exchange-option-purple {
+    color: var(--purple-3);
+}
+
+.wild-exchange-option-white {
+    color: #000000;
 }

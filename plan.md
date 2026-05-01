@@ -24,9 +24,10 @@
 - [X] Generate initial seed
 - [X] Expiration effects
 - [X] Content!
-- [ ] Display three turns worth of stat boosts
-- [ ] Off-by-one bug: effects last 1 more cycle than they should, though before their last cycle it's not displayed in the "next cycle" counter
-- [X] Maybe consider a way to convert one stat to another at a really bad exchange rate (easy quests kinda facilitate this)
+- [X] Display three turns worth of stat boosts
+- [X] Off-by-one bug: effects last 1 more cycle than they should, though before their last cycle it's not displayed in the "next cycle" counter
+- [ ] Maybe consider a way to convert one stat to another at a really bad exchange rate (easy quests kinda facilitate this)
+- [ ] Make easy quests take two different stats
 - [ ] Maybe consider a recycle quest button
 - [X] Prevent another Level Up or Spawner from showing up if there's already one
 - [X] Display the number of quests at the top
@@ -34,8 +35,10 @@
 - [X] Easy and medium quests should always return a stat that they don't take, this makes them poor but useful conversions
 - [X] Change "on expiration" language to "when this goes away"
 - [X] Find a way to show what spawned a quest
-- [ ] Weight upcoming and potentially partially-filled quest rewards
+- [ ] Weight upcoming points and potentially partially-filled quest rewards
 - [X] Possibly lower the cost for permanent stat upgrades
+- [ ] Make ever-present bosses that will cause you to lose (or take a lot of damage) after a certain number of cycles
+    - Once you beat the boss, you level up, get a bunch of resources, and a new boss appears (maybe after some cycles)
 - [ ] Find minimal repro for a bug with Gren formatter
 
 # UI

@@ -1,6 +1,7 @@
 module Msg exposing (..)
 
 import Ids exposing (ID)
+import Player
 import Random
 import Stat exposing (Stat)
 
@@ -15,3 +16,6 @@ type Msg
     | PlayerRemovesAllPointsFromQuestReq { questId : ID, reqIdx : Int, stat : Stat }
     | PlayerCommitsCurrentCycle
     | CommitCycleAnimationEnds
+    | WildExchangeSlotSelected { slot : Player.WildExchangeSlot, stat : Maybe Stat }
+    | WildExchanged
+    | LastWildExchangeUndone

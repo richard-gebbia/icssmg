@@ -22,7 +22,27 @@ type alias Player =
     , purpleTotalForCycle : Int
     , whiteTotalForCycle : Int
     , wildTotalForCycle : Int
+    , wildExchangeSlot1 : Maybe Stat
+    , wildExchangeSlot2 : Maybe Stat
+    , wildExchangeSlot3 : Maybe Stat
+    , wildExchangeSlot4 : Maybe Stat
+    , exchangedWilds : Array ExchangedWild
     }
+
+
+type alias ExchangedWild =
+    { res1 : Stat
+    , res2 : Stat
+    , res3 : Stat
+    , res4 : Stat
+    }
+
+
+type WildExchangeSlot
+    = WildExchangeSlot1
+    | WildExchangeSlot2
+    | WildExchangeSlot3
+    | WildExchangeSlot4
 
 
 nextCycleStartState : Player -> Player
@@ -42,6 +62,7 @@ nextCycleStartState player =
     , purpleTotalForCycle = 0
     , whiteTotalForCycle = 0
     , wildTotalForCycle = 0
+    , exchangedWilds = []
     }
 
 
@@ -97,7 +118,7 @@ totalPointsForCycleForStat stat player =
 
 withPointsChanged : Stat -> (Int -> Int) -> Player -> Player
 withPointsChanged stat statChange player =
-    when stat is
+    (when stat is
         Stat.Pink ->
             { player | pink = statChange player.pink }
 
@@ -118,6 +139,229 @@ withPointsChanged stat statChange player =
 
         Stat.Wild ->
             { player | wild = statChange player.wild }
+    )
+        |> withAdjustedWildExchangeSlots
+
+
+wildExchangeSlot : WildExchangeSlot -> Player -> Maybe Stat
+wildExchangeSlot slot player =
+    when slot is
+        WildExchangeSlot1 ->
+            player.wildExchangeSlot1
+
+        WildExchangeSlot2 ->
+            player.wildExchangeSlot2
+
+        WildExchangeSlot3 ->
+            player.wildExchangeSlot3
+
+        WildExchangeSlot4 ->
+            player.wildExchangeSlot4
+
+
+withAdjustedWildExchangeSlots : Player -> Player
+withAdjustedWildExchangeSlots player =
+    Array.foldl
+        (\slot playerIter ->
+            withStatSelectedInWildExchangeSlot slot (wildExchangeSlot slot playerIter) playerIter
+        )
+        player
+        [ WildExchangeSlot1
+        , WildExchangeSlot2
+        , WildExchangeSlot3
+        , WildExchangeSlot4
+        ]
+
+
+optionsForWildExchangeSlot : WildExchangeSlot -> Player -> Array (Maybe Stat)
+optionsForWildExchangeSlot slot player =
+    let
+        numInOtherExchangeSlots : Stat -> Int
+        numInOtherExchangeSlots stat =
+            Array.foldl
+                (\slot_ amount ->
+                    if slot_ == slot then
+                        amount
+
+                    else if wildExchangeSlot slot_ player == Just stat then
+                        amount + 1
+
+                    else
+                        amount
+                )
+                0
+                [ WildExchangeSlot1
+                , WildExchangeSlot2
+                , WildExchangeSlot3
+                , WildExchangeSlot4
+                ]
+
+        isStatAnOption : Stat -> Bool
+        isStatAnOption stat =
+            0 < pointsForStat stat player - numInOtherExchangeSlots stat
+    in
+    Array.keepIf isStatAnOption Stat.allBasicStats
+        |> Array.map Just
+        |> Array.pushFirst Nothing
+
+
+withStatSelectedInWildExchangeSlot : WildExchangeSlot -> Maybe Stat -> Player -> Player
+withStatSelectedInWildExchangeSlot slot stat player =
+    let
+        stat_ =
+            if not (Array.member stat (optionsForWildExchangeSlot slot player)) then
+                Nothing
+
+            else
+                stat
+    in
+    when slot is
+        WildExchangeSlot1 ->
+            { player | wildExchangeSlot1 = stat_ }
+
+        WildExchangeSlot2 ->
+            { player | wildExchangeSlot2 = stat_ }
+
+        WildExchangeSlot3 ->
+            { player | wildExchangeSlot3 = stat_ }
+
+        WildExchangeSlot4 ->
+            { player | wildExchangeSlot4 = stat_ }
+
+
+canExchangeForWild : Player -> Bool
+canExchangeForWild player =
+    let
+        isJust : Maybe a -> Bool
+        isJust m =
+            when m is
+                Just _ ->
+                    True
+
+                Nothing ->
+                    False
+    in
+    Array.all isJust
+        [ player.wildExchangeSlot1
+        , player.wildExchangeSlot2
+        , player.wildExchangeSlot3
+        , player.wildExchangeSlot4
+        ]
+
+
+{-| Note: I only have to do this in this disgusting way because the formatter breaks on 
+array destructuring.
+-}
+withWildExchanged : Player -> Player
+withWildExchanged player =
+    let
+        stats : Maybe { stat1 : Stat, stat2 : Stat, stat3 : Stat, stat4 : Stat }
+        stats =
+            [ player.wildExchangeSlot1
+            , player.wildExchangeSlot2
+            , player.wildExchangeSlot3
+            , player.wildExchangeSlot4
+            ]
+                |> Array.mapAndKeepJust identity
+                |> Array.popFirst
+                |> Maybe.andThen
+                    (\stat1AndRest ->
+                        let
+                            stat1 =
+                                stat1AndRest.first
+                        in
+                        Array.popFirst stat1AndRest.rest
+                            |> Maybe.andThen
+                                (\stat2AndRest ->
+                                    let
+                                        stat2 =
+                                            stat2AndRest.first
+                                    in
+                                    Array.popFirst stat2AndRest.rest
+                                        |> Maybe.andThen
+                                            (\stat3AndRest ->
+                                                let
+                                                    stat3 =
+                                                        stat3AndRest.first
+                                                in
+                                                Array.popFirst stat3AndRest.rest
+                                                    |> Maybe.map
+                                                        (\stat4AndRest ->
+                                                            let
+                                                                stat4 =
+                                                                    stat4AndRest.first
+                                                            in
+                                                            { stat1 = stat1
+                                                            , stat2 = stat2
+                                                            , stat3 = stat3
+                                                            , stat4 = stat4
+                                                            }
+                                                        )
+                                            )
+                                )
+                    )
+    in
+    when stats is
+        Just { stat1, stat2, stat3, stat4 } ->
+            Array.foldl
+                (\stat playerIter -> withPointsChanged stat (\points -> points - 1) playerIter)
+                player
+                [ stat1, stat2, stat3, stat4 ]
+                |> withPointsChanged Stat.Wild (\points -> points + 1)
+                |> (\player_ ->
+                        { player_
+                        | exchangedWilds =
+                            Array.pushLast
+                                { res1 = stat1
+                                , res2 = stat2
+                                , res3 = stat3
+                                , res4 = stat4
+                                }
+                                player_.exchangedWilds
+                        , wildTotalForCycle = player.wildTotalForCycle + 1
+                        }
+                   )
+                |> withAdjustedWildExchangeSlots
+
+        _ ->
+            player
+
+
+canUndoLastWildExchange : Player -> Bool
+canUndoLastWildExchange player =
+    0 < player.wild && not (Array.length player.exchangedWilds == 0)
+
+
+withWildExchangeUndone : Player -> Player
+withWildExchangeUndone player =
+    let
+        lastAndRestExchangedWilds : Maybe { last : ExchangedWild, initial : Array ExchangedWild }
+        lastAndRestExchangedWilds =
+            Array.popLast player.exchangedWilds
+
+        incPoints : Stat -> Player -> Player
+        incPoints stat player_ =
+            player_
+                |> withPointsChanged stat (\points -> points + 1)
+    in
+    lastAndRestExchangedWilds
+        |> Maybe.map
+            (\{ last, initial } ->
+                if player.wild <= 0 then
+                    player
+
+                else
+                    { player
+                    | wild = player.wild - 1
+                    , wildTotalForCycle = player.wildTotalForCycle - 1
+                    , exchangedWilds = initial
+                    }
+                        |> incPoints last.res1
+                        |> incPoints last.res2
+                        |> incPoints last.res3
+                        |> incPoints last.res4
+            )
+        |> Maybe.withDefault player
 
 
 {-| Updates HP. This can make the player HP go above max HP for optimization purposes.

@@ -100,6 +100,21 @@ update msg model =
             , command = Cmd.none
             }
 
+        Msg.WildExchangeSlotSelected { slot, stat } ->
+            { model = { model | gameModel = GameModel.withWildExchangeSlotSelected slot stat model.gameModel }
+            , command = Cmd.none
+            }
+
+        Msg.WildExchanged ->
+            { model = { model | gameModel = GameModel.withWildExchanged model.gameModel }
+            , command = Cmd.none
+            }
+
+        Msg.LastWildExchangeUndone ->
+            { model = { model | gameModel = GameModel.withLastWildExchangeUndone model.gameModel }
+            , command = Cmd.none
+            }
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
