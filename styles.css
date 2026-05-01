@@ -84,6 +84,10 @@ hr {
     width: 100%;
 }
 
+.boss hr {
+    border: 1px var(--yellow-2) solid;
+}
+
 .game {
     width: 1600px;
     height: 900px;
@@ -157,6 +161,11 @@ hr {
     background-color: var(--blue-5);
 }
 
+.quest-container.boss {
+    background-color: var(--cyan-2);
+    color: var(--yellow-2);
+}
+
 .quest-title {
     font-weight: 700;
     font-size: 20pt;
@@ -186,6 +195,7 @@ hr {
 
 .pip-row-header {
     background-color: var(--purple-6);
+    color: var(--white);
     border: 2px var(--white) solid;
     border-radius: 4px;
     padding: 0.25rem;

@@ -57,7 +57,10 @@ viewQuest player isCommittingCycle questId quest =
             ]
             [ Html.div
                 [ HtmlAttrs.class "quest-container"
-                , HtmlAttrs.classList [ { class = "quest-completed", enabled = isCompleted } ]
+                , HtmlAttrs.classList
+                    [ { class = "quest-completed", enabled = isCompleted }
+                    , { class = "boss", enabled = quest.isBoss }
+                    ]
                 ]
                 [ Html.div [ HtmlAttrs.class "quest-title" ]
                     [ Html.text

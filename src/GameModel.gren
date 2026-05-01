@@ -60,6 +60,7 @@ init =
                 |> Dict.set 1
                     { id = "Initial Venture"
                     , title = "Initial Venture"
+                    , isBoss = True
                     , requirements = [ QuestReq.init Stat.Pink 1 ]
                     , duration = Duration.Permanent
                     , completionEffects =
@@ -719,6 +720,7 @@ fuckAround =
             { quest =
                 { id = "Fuck Around"
                 , title = title
+                , isBoss = False
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
@@ -747,6 +749,7 @@ findOut =
             { quest =
                 { id = "Find Out"
                 , title = "An Angry Swarm of Intergalactic Wasps " ++ romanNumeral game.player.level
+                , isBoss = False
                 , requirements = [ QuestReq.init stat (game.player.level * 4) ]
                 , duration = Duration.Temp { cyclesLeft = 4 }
                 , completionEffects =
@@ -771,6 +774,7 @@ statLevelUp stat title =
             { quest =
                 { id = "Stat Level Up"
                 , title = title
+                , isBoss = False
                 , requirements = [ QuestReq.init stat 6 ]
                 , duration = Duration.Permanent
                 , completionEffects =
@@ -828,6 +832,7 @@ easyProcedural =
             { quest =
                 { id = "Easy Procedural"
                 , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                , isBoss = False
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
@@ -895,6 +900,7 @@ mediumProcedural =
             { quest =
                 { id = "Medium Procedural"
                 , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                , isBoss = True
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects = rewards
@@ -964,6 +970,7 @@ hardProcedural =
             { quest =
                 { id = "Hard Procedural"
                 , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
+                , isBoss = False
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 7 }
                 , completionEffects = rewards
@@ -1055,6 +1062,7 @@ statChain1 stat =
             { quest =
                 { id = "Stat Chain 1 " ++ Stat.toString stat
                 , title = title
+                , isBoss = False
                 , requirements = [ QuestReq.init stat (game.player.level * 2) ]
                 , duration = Duration.Temp { cyclesLeft = 3 }
                 , completionEffects =
@@ -1087,6 +1095,7 @@ statChain2 =
             { quest =
                 { id = "Stat Chain 2 " ++ Stat.toString stat
                 , title = title
+                , isBoss = False
                 , requirements = [ QuestReq.init stat (game.player.level * 5) ]
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects =
@@ -1119,6 +1128,7 @@ statChain3 =
             { quest =
                 { id = "Stat Chain 3 " ++ Stat.toString stat
                 , title = title
+                , isBoss = False
                 , requirements =
                     Array.mapAndKeepJust
                         (\stat_ ->
@@ -1166,6 +1176,7 @@ recurringStatPump =
             { quest =
                 { id = "Recurring Stat Pump " ++ Stat.toString stat
                 , title = title
+                , isBoss = False
                 , requirements =
                     [ QuestReq.init statAndSeed1.value 1
                     , QuestReq.init statAndSeed2.value 1
@@ -1317,6 +1328,7 @@ recurringHealingPump =
             { quest =
                 { id = "Recurring Healing Pump"
                 , title = title
+                , isBoss = False
                 , requirements =
                     [ QuestReq.init statAndSeed1.value game.player.level
                     , QuestReq.init statAndSeed2.value game.player.level

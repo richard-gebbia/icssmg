@@ -9,6 +9,7 @@ import Stat exposing (Stat)
 type alias Quest =
     { id : String
     , title : String
+    , isBoss : Bool
     , requirements : Array Requirement
     , duration : Duration
     , completionEffects : Array CycleStartEffect
