@@ -221,27 +221,7 @@ pointPip isFulfilled stat =
     let
         classForStat : String
         classForStat =
-            when stat is
-                Stat.Pink ->
-                    "pip-pink"
-
-                Stat.Yellow ->
-                    "pip-yellow"
-
-                Stat.Green ->
-                    "pip-green"
-
-                Stat.Blue ->
-                    "pip-blue"
-
-                Stat.Purple ->
-                    "pip-purple"
-
-                Stat.White ->
-                    "pip-white"
-
-                _ ->
-                    ""
+            "pip-" ++ Stat.toString stat
 
         classForFulfilled : String
         classForFulfilled =
@@ -276,9 +256,6 @@ imgForStat stat =
 
         Stat.Purple ->
             "img/purple-parallelogram.svg"
-
-        Stat.White ->
-            "img/white-circle.svg"
 
         Stat.Wild ->
             "img/wild-blob.svg"
@@ -410,7 +387,6 @@ viewPlayerInfo gameModel isCommittingCycle =
                     , Stat.Green
                     , Stat.Blue
                     , Stat.Purple
-                    , Stat.White
                     , Stat.Wild
                     ]
                 )

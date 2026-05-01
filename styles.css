@@ -253,11 +253,6 @@ hr {
     content: url("img/black-parallelogram.svg");
 }
 
-.pip-white {
-    background-color: var(--white);
-    content: url("img/black-circle.svg");
-}
-
 .player-info-panel {
     border-left: 4px var(--white) solid;
     width: 400px;
@@ -321,8 +316,4 @@ hr {
 
 .wild-exchange-option-purple {
     color: var(--purple-3);
-}
-
-.wild-exchange-option-white {
-    color: #000000;
 }

@@ -9,7 +9,6 @@ type Stat
     | Green
     | Blue
     | Purple
-    | White
     | Wild
 
 
@@ -20,7 +19,6 @@ allBasicStats =
     , Green
     , Blue
     , Purple
-    , White
     ]
 
 
@@ -41,9 +39,6 @@ toString stat =
 
         Purple ->
             "purple"
-
-        White ->
-            "white"
 
         Wild ->
             "wild"
@@ -66,9 +61,6 @@ fromString str =
 
         "purple" ->
             Just Purple
-
-        "white" ->
-            Just White
 
         "wild" ->
             Just Wild
@@ -94,9 +86,6 @@ shape stat =
 
         Purple ->
             "Parallelogram"
-
-        White ->
-            "Circle"
 
         Wild ->
             "Blob"

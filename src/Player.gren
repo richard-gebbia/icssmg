@@ -13,14 +13,12 @@ type alias Player =
     , green : Int
     , blue : Int
     , purple : Int
-    , white : Int
     , wild : Int
     , pinkTotalForCycle : Int
     , yellowTotalForCycle : Int
     , greenTotalForCycle : Int
     , blueTotalForCycle : Int
     , purpleTotalForCycle : Int
-    , whiteTotalForCycle : Int
     , wildTotalForCycle : Int
     , wildExchangeSlot1 : Maybe Stat
     , wildExchangeSlot2 : Maybe Stat
@@ -53,21 +51,19 @@ nextCycleStartState player =
     , green = 0
     , blue = 0
     , purple = 0
-    , white = 0
     , wild = 0
     , pinkTotalForCycle = 0
     , yellowTotalForCycle = 0
     , greenTotalForCycle = 0
     , blueTotalForCycle = 0
     , purpleTotalForCycle = 0
-    , whiteTotalForCycle = 0
     , wildTotalForCycle = 0
     , exchangedWilds = []
     }
 
 
 pointsForStat : Stat -> Player -> Int
-pointsForStat stat { pink, yellow, green, blue, purple, white, wild } =
+pointsForStat stat { pink, yellow, green, blue, purple, wild } =
     when stat is
         Stat.Pink ->
             pink
@@ -83,9 +79,6 @@ pointsForStat stat { pink, yellow, green, blue, purple, white, wild } =
 
         Stat.Purple ->
             purple
-
-        Stat.White ->
-            white
 
         Stat.Wild ->
             wild
@@ -109,9 +102,6 @@ totalPointsForCycleForStat stat player =
         Stat.Purple ->
             player.purpleTotalForCycle
 
-        Stat.White ->
-            player.whiteTotalForCycle
-
         Stat.Wild ->
             player.wildTotalForCycle
 
@@ -133,9 +123,6 @@ withPointsChanged stat statChange player =
 
         Stat.Purple ->
             { player | purple = statChange player.purple }
-
-        Stat.White ->
-            { player | white = statChange player.white }
 
         Stat.Wild ->
             { player | wild = statChange player.wild }
@@ -399,7 +386,6 @@ afterEffectsApplied player =
     , greenTotalForCycle = player.green
     , blueTotalForCycle = player.blue
     , purpleTotalForCycle = player.purple
-    , whiteTotalForCycle = player.white
     , wild = player.wild + player.level
     , wildTotalForCycle = player.wild + player.level
     }
