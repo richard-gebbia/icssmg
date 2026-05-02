@@ -23,6 +23,7 @@ type alias GameModel =
     , primaryQuestGenerator : Dict ID Quest -> QuestGenerator
     , questGeneratorsByName : Dict String QuestGenerator
     , generateQuestCounter : Int
+    , bossBreatherCounter : Int
     , numQuestsCompleted : Int
     }
 
@@ -60,7 +61,7 @@ init =
                 |> Dict.set 1
                     { id = "Initial Venture"
                     , title = "Initial Venture"
-                    , isBoss = True
+                    , isBoss = False
                     , requirements = [ QuestReq.init Stat.Pink 1 ]
                     , duration = Duration.Permanent
                     , completionEffects =
@@ -85,6 +86,7 @@ init =
                 |> Dict.set "Heal Chain 3" healChain3
                 |> Dict.set "Recurring Healing Pump" recurringHealingPump
         , generateQuestCounter = 0
+        , bossBreatherCounter = 0
         , numQuestsCompleted = 0
         }
     , command = Random.generate Msg.GeneratedInitialSeed Random.independentSeed
@@ -103,7 +105,7 @@ nextCycleStartState gameModel =
     let
         playerAtCycleStart : Player
         playerAtCycleStart =
-            player
+            Player.nextCycleStartState gameModel.player
 
         effectsAfterTickingDown : Array CycleStartEffect
         effectsAfterTickingDown =
@@ -217,6 +219,10 @@ nextCycleStartState gameModel =
                 )
                 gameModel.quests
 
+        didBossJustGoAway : Bool
+        didBossJustGoAway =
+            doesBossQuestExist gameModel.quests && not (doesBossQuestExist questsAfterTickingDown)
+
         playerWithNewPointsAndLevel : Player
         playerWithNewPointsAndLevel =
             Array.foldl
@@ -317,6 +323,20 @@ nextCycleStartState gameModel =
             if gameModel.generateQuestCounter == 0 then
                 randomNewQuestAndSeedAndIds spawnedQuestsAndRandomSeedAndIds.quests randomSeed ids
 
+            else if not (doesBossQuestExist gameModel.quests) && Math.modBy 3 gameModel.bossBreatherCounter == 0 then
+                let
+                    bossQuestAndSeed =
+                        generateQuest bossProcedural gameModel randomSeed Nothing ""
+
+                    idAndIds : { id : ID, nextIds : Ids }
+                    idAndIds =
+                        Ids.next ids
+                in
+                { quests = Dict.empty |> Dict.set idAndIds.id bossQuestAndSeed.quest
+                , randomSeed = bossQuestAndSeed.randomSeed
+                , ids = idAndIds.nextIds
+                }
+
             else
                 { quests = Dict.empty, randomSeed = randomSeed, ids = ids }
 
@@ -332,13 +352,13 @@ nextCycleStartState gameModel =
                     { quests = questsSoFar, randomSeed = newQuestForCycleAndIds.randomSeed, ids = newQuestForCycleAndIds.ids }
 
                 questsThatDontCount =
-                    [ "Level Up"
-                    , "Recurring Stat Pump " ++ Stat.toString Stat.Pink
+                    [ "Recurring Stat Pump " ++ Stat.toString Stat.Pink
                     , "Recurring Stat Pump " ++ Stat.toString Stat.Yellow
                     , "Recurring Stat Pump " ++ Stat.toString Stat.Green
                     , "Recurring Stat Pump " ++ Stat.toString Stat.Blue
                     , "Recurring Stat Pump " ++ Stat.toString Stat.Purple
                     , "Recurring Healing Pump"
+                    , "Boss"
                     ]
 
                 numQuestsThatCount =
@@ -363,6 +383,14 @@ nextCycleStartState gameModel =
 
             else
                 initState
+
+        newBossCounterBreather : Int
+        newBossCounterBreather =
+            if didBossJustGoAway then
+                1
+
+            else
+                gameModel.bossBreatherCounter + 1
     in
     { gameModel
     | player = playerWithNewPointsAndLevel
@@ -372,6 +400,7 @@ nextCycleStartState gameModel =
     , randomSeed = newQuestsAndSeedAndIds.randomSeed
     , ids = newQuestsAndSeedAndIds.ids
     , generateQuestCounter = Math.modBy 2 (gameModel.generateQuestCounter + 1)
+    , bossBreatherCounter = newBossCounterBreather
     , numQuestsCompleted = gameModel.numQuestsCompleted + numQuestsCompletedThisCycle
     }
 
@@ -610,6 +639,11 @@ withLastWildExchangeUndone gameModel =
     }
 
 
+doesBossQuestExist : Dict ID Quest -> Bool
+doesBossQuestExist quests =
+    Array.any .isBoss (Dict.values quests)
+
+
 
 -- Quest Generators
 
@@ -827,7 +861,7 @@ easyProcedural =
                         ]
 
                 rewardAndSeed =
-                    Random.step (randomStat [] [ statAndSeed1.value, statAndSeed2.value ]) statAndSeed2.seed
+                    Random.step (randomProceduralReward game [ statAndSeed1.value, statAndSeed2.value ]) statAndSeed2.seed
             in
             { quest =
                 { id = "Easy Procedural"
@@ -885,10 +919,10 @@ mediumProcedural =
                         ]
 
                 rewardAndSeed1 =
-                    Random.step (randomStat [] [ statAndSeed1.value, statAndSeed2.value ]) statAndSeed2.seed
+                    Random.step (randomProceduralReward game [ statAndSeed1.value, statAndSeed2.value ]) statAndSeed2.seed
 
                 rewardAndSeed2 =
-                    Random.step (randomStat [] [ statAndSeed1.value, statAndSeed2.value ]) rewardAndSeed1.seed
+                    Random.step (randomProceduralReward game [ statAndSeed1.value, statAndSeed2.value ]) rewardAndSeed1.seed
 
                 rewards =
                     collapsePointEffects
@@ -900,7 +934,7 @@ mediumProcedural =
             { quest =
                 { id = "Medium Procedural"
                 , title = titleAndSeed.value ++ " " ++ romanNumeral game.player.level
-                , isBoss = True
+                , isBoss = False
                 , requirements = requirements
                 , duration = Duration.Temp { cyclesLeft = 5 }
                 , completionEffects = rewards
@@ -978,6 +1012,63 @@ hardProcedural =
                 , spawner = spawner
                 }
             , randomSeed = rewardAndSeed3.seed
+            }
+        )
+
+
+bossProcedural : QuestGenerator
+bossProcedural =
+    QuestGen
+        (\game seed spawner _extraData ->
+            let
+                title =
+                    "BOSS: The Evil " ++ (Array.get (game.player.level - 1) sciFiBossTitles |> Maybe.withDefault "Gardener")
+
+                points =
+                    playerNextCycleStatsDesc game
+
+                statsAndSeed =
+                    Array.foldl
+                        (\_ { stats, randomSeed } ->
+                            let
+                                newStatAndSeed =
+                                    Random.step (randomStat [] []) randomSeed
+                            in
+                            { stats = Array.pushLast newStatAndSeed.value stats
+                            , randomSeed = newStatAndSeed.seed
+                            }
+                        )
+                        { stats = [], randomSeed = seed }
+                        (Array.range 1 ((3 + game.player.level) * 2))
+
+                requirements =
+                    statsAndSeed.stats
+                        |> Array.map (\stat -> QuestReq.init stat game.player.level)
+                        |> collapseRequirements
+
+                rewards =
+                    Stat.allBasicStats
+                        |> Array.map
+                            (\stat ->
+                                CycleStartEffect.PlayerGetsPoints
+                                    { stat = stat
+                                    , amount = game.player.level * 8
+                                    , duration = Duration.Temp { cyclesLeft = 1 }
+                                    }
+                            )
+                        |> Array.pushLast CycleStartEffect.PlayerLevelsUp
+            in
+            { quest =
+                { id = "Boss"
+                , title = title
+                , isBoss = True
+                , requirements = requirements
+                , duration = Duration.Temp { cyclesLeft = 7 + game.player.level * 3 }
+                , completionEffects = rewards
+                , expirationEffects = [ CycleStartEffect.PlayerTakesDamage { amount = 8 } ]
+                , spawner = spawner
+                }
+            , randomSeed = statsAndSeed.randomSeed
             }
         )
 
@@ -1464,23 +1555,49 @@ randomSciFiQuestNames =
         ]
 
 
+{-| Also generated by ChatGPT :) -}
+sciFiBossTitles : Array String
+sciFiBossTitles =
+    [ "Habitat Overseer"
+    , "Governor"
+    , "Planet Prefect"
+    , "Solar System Marshal"
+    , "Sector Administrator"
+    , "Frontier Commissioner"
+    , "Stellar Union Prime Minister"
+    , "Grand Chancellor"
+    , "Supreme Consul"
+    , "Galactic Sovereign"
+    ]
+
+
 playerNextCycleStatsDesc : GameModel -> Array { stat : Stat, amount : Int }
 playerNextCycleStatsDesc gameModel =
     let
         pink =
             pointsForStatInNCycles 1 Stat.Pink gameModel
+                + pointsForStatInNCycles 2 Stat.Pink gameModel
+                + pointsForStatInNCycles 3 Stat.Pink gameModel
 
         yellow =
             pointsForStatInNCycles 1 Stat.Yellow gameModel
+                + pointsForStatInNCycles 2 Stat.Yellow gameModel
+                + pointsForStatInNCycles 3 Stat.Yellow gameModel
 
         green =
             pointsForStatInNCycles 1 Stat.Green gameModel
+                + pointsForStatInNCycles 2 Stat.Green gameModel
+                + pointsForStatInNCycles 3 Stat.Green gameModel
 
         blue =
             pointsForStatInNCycles 1 Stat.Blue gameModel
+                + pointsForStatInNCycles 2 Stat.Blue gameModel
+                + pointsForStatInNCycles 3 Stat.Blue gameModel
 
         purple =
             pointsForStatInNCycles 1 Stat.Purple gameModel
+                + pointsForStatInNCycles 2 Stat.Purple gameModel
+                + pointsForStatInNCycles 3 Stat.Purple gameModel
     in
     [ { stat = Stat.Pink, amount = pink }
     , { stat = Stat.Yellow, amount = yellow }
@@ -1549,3 +1666,45 @@ collapsePointEffects effects =
         )
         []
         effects
+
+
+randomProceduralReward : GameModel -> Array Stat -> Random.Generator Stat
+randomProceduralReward gameModel without =
+    let
+        bossQuest : Maybe Quest
+        bossQuest =
+            gameModel.quests
+                |> Dict.values
+                |> Array.findFirst .isBoss
+                |> Maybe.map .value
+
+        withMissingStats : Array { weight : Float, value : Stat } -> Array { weight : Float, value : Stat }
+        withMissingStats weights =
+            Array.foldl
+                (\stat weightsIter ->
+                    if Array.any (\{ value } -> value == stat) weightsIter then
+                        weightsIter
+
+                    else
+                        Array.pushLast { weight = 1, value = stat } weightsIter
+                )
+                weights
+                Stat.allBasicStats
+    in
+    when bossQuest is
+        Just quest ->
+            quest.requirements
+                |> Array.map
+                    (\req ->
+                        { weight = max (QuestReq.pointsNeededToComplete req |> toFloat) 1
+                        , value = QuestReq.stat req
+                        }
+                    )
+                |> withMissingStats
+                |> Array.keepIf (\{ value } -> not (Array.member value without))
+                |> Array.popFirst
+                |> Maybe.map (\{ first, rest } -> Random.weighted first rest)
+                |> Maybe.withDefault (randomStat [] [])
+
+        Nothing ->
+            randomStat [] without

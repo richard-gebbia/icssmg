@@ -300,7 +300,7 @@ viewCycleStartEffect effect =
         CycleStartEffect.PlayerLevelsUp ->
             [ Html.text "Level up! (Get an additional "
             , Html.img [ HtmlAttrs.src "img/wild-blob.svg", HtmlAttrs.width 16, HtmlAttrs.height 16 ] []
-            , Html.text " each cycle.)"
+            , Html.text " each cycle. Keep up to this many resources each cycle.)"
             ]
 
         CycleStartEffect.PlayerHeals { amount } ->

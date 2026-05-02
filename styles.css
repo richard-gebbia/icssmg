@@ -166,6 +166,11 @@ hr {
     color: var(--yellow-2);
 }
 
+.quest-container.quest-completed.boss {
+    background-color: var(--blue-5);
+    color: var(--yellow-2);
+}
+
 .quest-title {
     font-weight: 700;
     font-size: 20pt;

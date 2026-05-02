@@ -26,8 +26,8 @@
 - [X] Content!
 - [X] Display three turns worth of stat boosts
 - [X] Off-by-one bug: effects last 1 more cycle than they should, though before their last cycle it's not displayed in the "next cycle" counter
-- [ ] Maybe consider a way to convert one stat to another at a really bad exchange rate (easy quests kinda facilitate this)
-- [ ] Make easy quests take two different stats
+- [X] Maybe consider a way to convert one stat to another at a really bad exchange rate (easy quests kinda facilitate this)
+- [X] Make easy quests take two different stats
 - [ ] Maybe consider a recycle quest button
 - [X] Prevent another Level Up or Spawner from showing up if there's already one
 - [X] Display the number of quests at the top
@@ -124,6 +124,7 @@ Two panes, horizontally laid out:
     - 1 new quest every ~3 cycles
     - don't make a new quest if the player is already dealing with 10 or more
 
+
 ## Effect resolution
 - Upon clicking "Next Cycle", this happens in order:
     - the player resets all their points to zero
@@ -150,3 +151,9 @@ Stephen:
 Victor:
 - strategy to play the game is too simple
 - game is a 1-2 out of 10, only sees 4/10 potential
+
+Quest:
+- Didn't realize I lose all uncommitted resources every cycle at first (figured out almost immediately, though)
+- I have a big monitor, would be nice to see more quests at a time (a smaller size mode & resizeable view window would be a cheap fix)
+- Resource adding UI could be simplified
+- Fun idea. Gets a bit grindy at about level 3/4. A more streamlined UI, save feature, and a little more content would make it more engaging to aim for level 10

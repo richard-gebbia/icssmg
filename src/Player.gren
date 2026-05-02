@@ -46,11 +46,11 @@ type WildExchangeSlot
 nextCycleStartState : Player -> Player
 nextCycleStartState player =
     { player
-    | pink = 0
-    , yellow = 0
-    , green = 0
-    , blue = 0
-    , purple = 0
+    | pink = min player.pink player.level
+    , yellow = min player.yellow player.level
+    , green = min player.green player.level
+    , blue = min player.blue player.level
+    , purple = min player.purple player.level
     , wild = 0
     , pinkTotalForCycle = 0
     , yellowTotalForCycle = 0
